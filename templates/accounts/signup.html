@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Create account | FixNaija</title>
+</head>
+<body>
+	<main>
+		<h1>Create your FixNaija account</h1>
+		<form method="post">
+			{% csrf_token %}
+			{{ form.as_p }}
+			<button type="submit">Create account</button>
+		</form>
+		<p>Already registered? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+	</main>
+</body>
+</html>

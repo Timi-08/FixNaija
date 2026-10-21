@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Your profile | FixNaija</title>
+</head>
+<body>
+	<main>
+		<header>
+			<h1>Your profile</h1>
+			<form method="post" action="{% url 'accounts:logout' %}">
+				{% csrf_token %}
+				<button type="submit">Sign out</button>
+			</form>
+		</header>
+		<form method="post">
+			{% csrf_token %}
+			<fieldset>
+				<legend>Account details</legend>
+				{{ user_form.as_p }}
+			</fieldset>
+			<fieldset>
+				<legend>Contact details</legend>
+				{{ profile_form.as_p }}
+			</fieldset>
+			<button type="submit">Save changes</button>
+		</form>
+	</main>
+</body>
+</html>
