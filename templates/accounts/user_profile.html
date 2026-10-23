@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,6 +15,7 @@
 				<button type="submit">Sign out</button>
 			</form>
 		</header>
+
 		<form method="post">
 			{% csrf_token %}
 			<fieldset>
@@ -26,6 +28,20 @@
 			</fieldset>
 			<button type="submit">Save changes</button>
 		</form>
+
+		{% if not has_technician_profile %}
+			<section>
+				<h2>Offer Your Services on FixNaija</h2>
+				<p>
+					Are you a technician or skilled repairer?
+					Create a technician profile to showcase your skills,
+					list your services, set your prices, and connect with customers.
+				</p>
+				<a href="{% url 'technicians:technician_setup' %}">
+					Become a Technician
+				</a>
+			</section>
+		{% endif %}
 	</main>
 </body>
 </html>

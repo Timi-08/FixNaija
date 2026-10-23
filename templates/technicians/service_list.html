@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Technicians | FixNaija</title>
+</head>
+<body>
+    <h1>Find a Technician</h1>
+    
+
+<form method="GET">
+<label for="search">Search services or technicians:</label>
+<input
+    type="text"
+    name="q"
+    id="search"
+    placeholder="e.g. iPhone screen repair"
+    value="{{ search_query }}"
+>
+
+    <label for="budget">Your maximum budget (₦):</label>
+    <input
+        type="number"
+        name="budget"
+        id="budget"
+        min="0"
+        step="0.01"
+        placeholder="e.g. 20000"
+        value="{{ selected_budget }}"
+    >
+    <label for="category">Filter by category:</label>
+    <select name="category" id="category">
+        <option value="">All categories</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}"
+                {% if selected_category == category.id|stringformat:"s" %}
+                    selected
+                {% endif %}>
+                {{ category.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label for="area">Filter by service area:</label>
+    <select name="area" id="area">
+        <option value="">All areas</option>
+        {% for area in areas %}
+            <option value="{{ area.id }}"
+                {% if selected_area == area.id|stringformat:"s" %}
+                    selected
+                {% endif %}>
+                {{ area.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Filter</button>
+</form>
+
+
+
+    {% for listing in listings %}
+        <article>
+            <h2>
+                <a href="{% url 'technicians:service_detail' listing.id %}">
+                    {{ listing.title }}
+                </a>
+            </h2>
+            <p>Category: {{ listing.category.name }}</p>
+
+            <p>
+                Technician: {{ listing.technician.user.username }}
+            </p>
+            {% if listing.technician.is_verified %}
+                <p>✓ Verified Technician</p>
+            {% endif %}
+
+            <p>{{ listing.description }}</p>
+
+            <p>
+                Price: ₦{{ listing.min_price }}
+                {% if listing.max_price %}
+                    - ₦{{ listing.max_price }}
+                {% else %}
+                    and above
+                {% endif %}
+            </p>
+
+            <p>Service areas:
+                {% for area in listing.service_areas.all %}
+                    {{ area.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No service areas listed.
+                {% endfor %}
+            </p>
+
+            <a href="{% url 'technicians:service_detail' listing.id %}">
+            View Details
+            </a>
+        </article>
+
+        <hr>
+    {% empty %}
+        <p>No services are available yet.</p>
+    {% endfor %}
+</body>
+</html>
