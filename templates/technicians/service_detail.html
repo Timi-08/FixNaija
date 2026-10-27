@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ listing.title }} | FixNaija</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+            line-height: 1.6;
+            color: #222;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 24px;
+            margin: 20px 0;
+        }
+
+        .technician-picture {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e6f7eb;
+            color: #176b35;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 16px;
+            margin: 8px 8px 8px 0;
+            border-radius: 5px;
+            text-decoration: none;
+            background: #176b35;
+            color: white;
+        }
+
+        .secondary {
+            background: #eee;
+            color: #222;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <p>
+        <a href="{% url 'technicians:service_list' %}">
+            &larr; Back to services
+        </a>
+    </p>
+
+    <main>
+        <!-- Service information -->
+        <section class="card">
+            <h1>{{ listing.title }}</h1>
+
+            <p>
+                <strong>Category:</strong>
+                {{ listing.category.name }}
+            </p>
+
+            <h2>About this service</h2>
+            <p>{{ listing.description|linebreaksbr }}</p>
+
+            <h2>Price range</h2>
+            <p>
+                <strong>₦{{ listing.min_price }}</strong>
+
+                {% if listing.max_price %}
+                    – ₦{{ listing.max_price }}
+                {% else %}
+                    and above
+                {% endif %}
+            </p>
+
+            <h2>Service areas</h2>
+            <ul>
+                {% for area in listing.service_areas.all %}
+                    <li>{{ area.name }}</li>
+                {% empty %}
+                    <li>The technician has not listed any service areas.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Technician information -->
+        <section class="card">
+            <h2>About the technician</h2>
+
+            {% if listing.technician.profile_picture %}
+                <img
+                    src="{{ listing.technician.profile_picture.url }}"
+                    alt="{{ listing.technician.user.username }}'s profile picture"
+                    class="technician-picture"
+                >
+            {% endif %}
+
+            <h3>{{ listing.technician.user.username }}</h3>
+
+            {% if listing.technician.is_verified %}
+                <p>
+                    <span class="badge">✓ Verified Technician</span>
+                </p>
+            
+            {% endif %}
+
+            {% if listing.technician.professional_info %}
+                <p>{{ listing.technician.professional_info|linebreaksbr }}</p>
+            {% endif %}
+
+            {% if listing.technician.base_location %}
+                <p>
+                    <strong>Based in:</strong>
+                    {{ listing.technician.base_location }}
+                </p>
+            {% endif %}
+        </section>
+
+        <!-- Contact and booking actions -->
+        <section class="card">
+            <h2>Interested in this service?</h2>
+            <p>Contact the technician or arrange a booking.</p>
+
+            <!-- Connect these actions when the team routes are confirmed. -->
+            <p>
+                <strong>Contact Technician:</strong>
+                Chat functionality will be connected to the technician chat page.
+            </p>
+
+            <p>
+                <strong>Book This Technician:</strong>
+                Booking functionality will be connected to the booking feature.
+            </p>
+        </section>
+    </main>
+
+</body>
+</html>

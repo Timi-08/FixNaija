@@ -1,3 +1,298 @@
-from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import ServiceListingForm, TechnicianProfileForm
+from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceArea
+from django.db.models import Q, Case, When, Value, IntegerField
+from .search_utils import extract_search_terms, normalize_query, find_related_phrases
+from decimal import Decimal, InvalidOperation
 
 # Create your views here.
+
+# Creating a technician profile
+@login_required
+def technician_setup(request):
+    # Check if the user already has a technician profile
+    technician = TechnicianProfile.objects.filter(
+        user=request.user
+    ).first()
+
+    if technician:
+        return redirect('technicians:my_services')
+
+    if request.method == 'POST':
+        form = TechnicianProfileForm(
+            request.POST,
+            request.FILES
+        )
+
+        if form.is_valid():
+            technician = form.save(commit=False)
+            technician.user = request.user
+            technician.save()
+
+            return redirect('technicians:my_services')
+    else:
+        form = TechnicianProfileForm()
+
+    return render(
+        request,
+        'technicians/technician_setup.html',
+        {'form': form}
+    )
+
+# Creating a service (by a technician)
+@login_required
+def create_service_listing(request):
+    technician = TechnicianProfile.objects.filter(
+        user=request.user
+    ).first()
+
+    if not technician:
+        return redirect('technician_setup')
+
+    if request.method == 'POST':
+        form = ServiceListingForm(request.POST)
+        if form.is_valid():
+            listing = form.save(commit=False)
+            listing.technician = technician
+            listing.save()
+            form.save_m2m()
+            return redirect('technicians:my_services')
+    else:
+        form = ServiceListingForm()
+
+    return render(
+        request,
+        'technicians/create_service_listing.html',
+        {'form': form}
+    )
+
+# list of services(available to all users)
+def service_list(request):
+    listings = ServiceListing.objects.filter(
+        is_active=True,
+        is_deleted=False,
+        technician__user__is_active=True
+    ).select_related('technician__user', 'category')
+
+    categories = ServiceCategory.objects.filter(is_active=True)
+    areas = ServiceArea.objects.filter(is_active=True)
+
+    category_id = request.GET.get('category')
+    area_id = request.GET.get('area')
+    search_query = request.GET.get('q', '').strip()
+    budget = request.GET.get('budget', '').strip()
+
+
+    if category_id:
+        listings = listings.filter(category_id=category_id)
+
+    if area_id:
+        listings = listings.filter(service_areas__id=area_id)
+
+
+    if budget:
+        try:
+            budget = Decimal(budget)
+
+            listings = listings.filter(
+                Q(min_price__lte=budget) &
+                (Q(max_price__gte=budget) | Q(max_price__isnull=True))
+            )
+        except (ValueError, InvalidOperation):
+            budget = ''
+
+    # search feature xoxoxoxoxoxoxoxoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxoxoxoxoxoxo
+   
+    if search_query:
+        normalized_query = normalize_query(search_query)
+        search_terms = extract_search_terms(normalized_query)
+        related_phrases = find_related_phrases(normalized_query)
+
+        search_filter = Q()
+
+        for term in search_terms:
+            search_filter |= (
+                Q(title__icontains=term) |
+                Q(description__icontains=term) |
+                Q(category__name__icontains=term) |
+                Q(technician__user__username__icontains=term) |
+                Q(technician__professional_info__icontains=term) |
+                Q(technician__base_location__icontains=term)
+            )
+
+        for phrase in related_phrases:
+            search_filter |= (
+                Q(title__icontains=phrase) |
+                Q(description__icontains=phrase) |
+                Q(category__name__icontains=phrase)
+            )
+
+        if search_terms or related_phrases:
+            listings = listings.filter(search_filter)
+
+            listings = listings.annotate(
+                relevance=(
+                    Case(
+                        When(title__iexact=normalized_query, then=Value(100)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                    + Case(
+                        When(title__icontains=normalized_query, then=Value(50)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                    + Case(
+                        When(category__name__icontains=normalized_query, then=Value(30)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                )
+            ).order_by('-relevance', 'title')
+        else:
+            listings = listings.none()
+
+
+    return render(      
+        request,
+        'technicians/service_list.html',
+        {
+            'listings': listings.distinct(),
+            'categories': categories,
+            'areas': areas,
+            'selected_category': category_id,
+            'selected_area': area_id,
+            'search_query': search_query,
+            'selected_budget': budget,
+        }
+    )
+
+# service detail page
+def service_detail(request, service_id):
+    listing = get_object_or_404(
+        ServiceListing.objects.select_related(
+            'technician__user',
+            'category',
+        ).prefetch_related('service_areas'),
+        id=service_id,
+        is_active=True,
+        is_deleted=False,
+        technician__user__is_active=True,
+    )
+
+    return render(
+        request,
+        'technicians/service_detail.html',
+        {'listing': listing}
+    )
+
+# Managing user's services (by a technician)
+@login_required
+def my_services(request):
+    technician = TechnicianProfile.objects.filter(
+        user=request.user
+    ).first()
+
+    if not technician:
+        return render(
+            request,
+            'technicians/my_services.html',
+            {
+                'listings': [],
+                'needs_profile': True
+            }
+        )
+
+    listings = ServiceListing.objects.filter(
+        technician=technician,
+        is_deleted=False
+    ).select_related('category')
+
+    return render(
+        request,
+        'technicians/my_services.html',
+        {
+            'listings': listings,
+            'needs_profile': False
+        }
+    )
+
+# editing a service
+@login_required
+def edit_service(request, service_id):
+    technician = TechnicianProfile.objects.filter(user=request.user).first()
+
+    if not technician:
+        return redirect('technicians:technician_setup')
+
+    listing = get_object_or_404(
+        ServiceListing,
+        id=service_id,
+        technician=technician,
+        is_deleted=False
+    )
+
+    if request.method == 'POST':
+        form = ServiceListingForm(request.POST, instance=listing)
+
+        if form.is_valid():
+            form.save()
+            return redirect('technicians:my_services')
+    else:
+        form = ServiceListingForm(instance=listing)
+
+    return render(
+        request,
+        'technicians/edit_service.html',
+        {'form': form, 'listing': listing}
+    )
+
+#  deleting a service
+@login_required
+def delete_service(request, service_id):
+    technician = TechnicianProfile.objects.filter(user=request.user).first()
+
+    if not technician:
+        return redirect('technicians:technician_setup')
+
+    listing = get_object_or_404(
+        ServiceListing,
+        id=service_id,
+        technician=technician,
+        is_deleted=False
+    )
+
+    if request.method == 'POST':
+        listing.is_deleted = True
+        listing.save()
+        return redirect('technicians:my_services')
+
+    return render(
+        request,
+        'technicians/delete_service.html',
+        {'listing': listing}
+    )
+
+# Pause/Reactivate Service
+@login_required
+def toggle_service_status(request, service_id):
+    if request.method != 'POST':
+        return redirect('technicians:my_services')
+
+    technician = TechnicianProfile.objects.filter(user=request.user).first()
+
+    if not technician:
+        return redirect('technicians:technician_setup')
+
+    listing = get_object_or_404(
+        ServiceListing,
+        id=service_id,
+        technician=technician,
+        is_deleted=False
+    )
+
+    listing.is_active = not listing.is_active
+    listing.save(update_fields=['is_active'])
+
+    return redirect('technicians:my_services')

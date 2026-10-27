@@ -35,6 +35,7 @@ class AccountLogoutView(LogoutView):
 @login_required
 def profile(request):
 	user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+	has_technician_profile = hasattr(request.user, 'technicianprofile')
 	user_form = UserDetailsForm(request.POST or None, instance=request.user)
 	profile_form = UserProfileForm(request.POST or None, instance=user_profile)
 
@@ -46,5 +47,9 @@ def profile(request):
 	return render(
 		request,
 		'accounts/user_profile.html',
-		{'user_form': user_form, 'profile_form': profile_form},
+		{
+			'user_form': user_form, 
+			'profile_form': profile_form, 
+			'has_technician_profile': has_technician_profile
+		},
 	)

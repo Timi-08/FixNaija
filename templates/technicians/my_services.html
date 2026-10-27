@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Services | FixNaija</title>
+</head>
+<body>
+    <h1>My Services</h1>
+    
+
+    {% if needs_profile %}
+        <h2>You need a technician profile</h2>
+
+        <p>
+            You haven't created a technician profile yet.
+            Create one to start offering your services on FixNaija.
+        </p>
+
+        <a href="{% url 'technicians:technician_setup' %}">Create Technician Profile</a>
+
+    {% else %}
+        <a href="{% url 'technicians:create_service_listing' %}">
+            Add a New Service
+        </a>
+
+        {% for listing in listings %}
+            <article>
+                <h2>{{ listing.title }}</h2>
+                <a href="{% url 'technicians:edit_service' listing.id %}">
+                Edit Service
+                </a>
+                <a href="{% url 'technicians:delete_service' listing.id %}">
+                    Delete Service
+                </a>
+                
+                <form method="POST" action="{% url 'technicians:toggle_service_status' listing.id %}">
+                    {% csrf_token %}
+
+                    {% if listing.is_active %}
+                        <button type="submit">Pause Service</button>
+                    {% else %}
+                        <button type="submit">Reactivate Service</button>
+                    {% endif %}
+                </form>
+
+                <p>Category: {{ listing.category.name }}</p>
+                <p>Minimum price: ₦{{ listing.min_price }}</p>
+
+                {% if listing.max_price %}
+                    <p>Maximum price: ₦{{ listing.max_price }}</p>
+                {% else %}
+                    <p>No maximum price specified</p>
+                {% endif %}
+
+                {% if listing.is_deleted %}
+                    <p>Deleted</p>
+                {% elif listing.is_active %}
+                    <p>Active</p>
+                {% else %}
+                    <p>Inactive</p>
+                {% endif %}
+            </article>
+            <hr>
+        {% empty %}
+            <p>You haven't added any services yet.</p>
+        {% endfor %}
+    {% endif %}
+</body>
+</html>
