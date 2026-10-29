@@ -75,11 +75,26 @@ urlpatterns = [
     views.edit_technician_profile,
     name="edit_technician_profile",
     ),
-    
+
+    # technician's public profile
     path(
         "technician/<str:username>/",
         views.technician_public_profile,
         name="technician_public_profile",
+    ),
+
+    # verification request
+    path(
+    "verification/request/",
+    views.submit_verification_request,
+    name="submit_verification_request",
+    ),
+
+    # viewing private verification document
+    path(
+        "admin/verification/<int:request_id>/document/<str:document_type>/",
+        views.view_verification_document,
+        name="view_verification_document",
     ),
 
 ]

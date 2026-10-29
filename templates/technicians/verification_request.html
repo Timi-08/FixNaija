@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technician Verification | FixNaija</title>
+</head>
+<body>
+    <h1>Technician Verification</h1>
+
+    {% for message in messages %}
+        <p>{{ message }}</p>
+    {% endfor %}
+
+    {% if already_verified %}
+        <h2>You're already verified!</h2>
+        <p>Your technician profile has been successfully verified.</p>
+        <p>You don't need to submit another verification request.</p>
+
+    {% else %}
+        {% if pending_request %}
+            <h2>Request Under Review</h2>
+            <p>Your verification request is pending administrator review.</p>
+
+        {% else %}
+            {% if latest_request %}
+                <h2>Previous Request: {{ latest_request.get_status_display }}</h2>
+
+                {% if latest_request.status == "rejected" %}
+                    <p>
+                        <strong>Reason for rejection:</strong>
+                        {{ latest_request.review_notes|default:"No reason was recorded." }}
+                    </p>
+                    <p>You can correct the issue and submit a new request.</p>
+                {% elif latest_request.status == "approved" %}
+                    <p>Your technician profile has been verified.</p>
+                {% endif %}
+            {% endif %}
+
+            <h2>Submit a Verification Request</h2>
+            <p>Submit an identity document. A trade qualification document is optional.</p>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Submit for Review</button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    <p>
+        <a href="{% url 'technicians:my_technician_profile' %}">
+            Back to My Technician Profile
+        </a>
+    </p>
+</body>
+</html>

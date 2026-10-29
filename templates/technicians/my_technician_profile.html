@@ -80,17 +80,16 @@
             {% if technician.is_verified %}
                 <p class="verified">✓ Verified Technician</p>
             {% else %}
-                <div class="verification-prompt">
-                    <h3>Get verified on FixNaija</h3>
-                    <p>
-                        Verification can help customers build trust
-                        when choosing your services.
-                    </p>
-                    <p>
-                        The verification request process will be
-                        available here once it has been implemented.
-                    </p>
-                </div>
+            <div class="verification-prompt">
+                <h3>Get verified on FixNaija</h3>
+                <p>
+                    Verification can help customers build trust
+                    when choosing your services.
+                </p>
+                <a href="{% url 'technicians:submit_verification_request' %}">
+                    Request Verification
+                </a>
+            </div>
             {% endif %}
 
             <h3>Professional Information</h3>

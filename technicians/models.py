@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from .storage import PrivateVerificationStorage
 
 # Create your models here.
 # Categories under which services fall
@@ -42,6 +43,55 @@ class TechnicianProfile(models.Model):
 
     def __str__(self):
         return f"{self.user} - Technician"
+
+# Request to get verified by fixnaija admins
+class TechnicianVerificationRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    technician = models.ForeignKey(
+        TechnicianProfile,
+        on_delete=models.CASCADE,
+        related_name="verification_requests",
+    )
+    
+    identity_document = models.FileField(
+        storage=PrivateVerificationStorage(),
+        upload_to="identity/",
+    )
+
+    qualification_document = models.FileField(
+        storage=PrivateVerificationStorage(),
+        upload_to="qualifications/",
+        blank=True,
+    )
+
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    review_notes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="technician_verification_reviews",
+    )
+
+    class Meta:
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return (
+            f"{self.technician.user.username} - "
+            f"{self.get_status_display()}"
+        )
 
 # Area which services can be delivered
 class ServiceArea(models.Model):

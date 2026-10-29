@@ -1,12 +1,14 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import ServiceListingForm, TechnicianProfileForm
-from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceArea
+from .forms import ServiceListingForm, TechnicianProfileForm, TechnicianVerificationRequestForm
+from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceArea, TechnicianVerificationRequest
 from django.db.models import Q, Case, When, Value, IntegerField
 from .search_utils import extract_search_terms, normalize_query, find_related_phrases
 from decimal import Decimal, InvalidOperation
 from django.core.paginator import Paginator
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import FileResponse, Http404
 
 # Create your views here.
 
@@ -164,6 +166,112 @@ def technician_public_profile(request, username):
         }
     )
 
+# technician verification rquest
+@login_required
+def submit_verification_request(request):
+    technician = TechnicianProfile.objects.filter(
+        user=request.user
+    ).first()
+
+    if technician is None:
+        messages.error(
+            request,
+            "You need a technician profile before requesting verification."
+        )
+        return redirect("technicians:technician_setup")
+
+    if technician.is_verified:
+        return render(
+            request,
+            "technicians/verification_request.html",
+            {
+                "technician": technician,
+                "pending_request": None,
+                "latest_request": None,
+                "form": None,
+                "already_verified": True,
+            },
+        )
+
+    pending_request = TechnicianVerificationRequest.objects.filter(
+        technician=technician,
+        status=TechnicianVerificationRequest.Status.PENDING,
+    ).first()
+
+    if pending_request:
+        return render(
+            request,
+            "technicians/verification_request.html",
+            {
+                "technician": technician,
+                "pending_request": pending_request,
+                "form": None,
+            },
+        )
+
+    if request.method == "POST":
+        form = TechnicianVerificationRequestForm(
+            request.POST,
+            request.FILES,
+        )
+
+        if form.is_valid():
+            verification_request = form.save(commit=False)
+            verification_request.technician = technician
+            verification_request.status = (
+                TechnicianVerificationRequest.Status.PENDING
+            )
+            verification_request.save()
+
+            messages.success(
+                request,
+                "Your verification request has been submitted for review."
+            )
+            return redirect("technicians:submit_verification_request")
+    else:
+        form = TechnicianVerificationRequestForm()
+
+    latest_request = TechnicianVerificationRequest.objects.filter(
+        technician=technician
+    ).order_by("-submitted_at").first()
+
+    return render(
+        request,
+        "technicians/verification_request.html",
+        {
+            "technician": technician,
+            "form": form,
+            "pending_request": None,
+            "latest_request": latest_request,
+        },
+    )
+
+# viewing private verification document
+@staff_member_required
+def view_verification_document(request, request_id, document_type):
+    verification_request = get_object_or_404(
+        TechnicianVerificationRequest,
+        pk=request_id,
+    )
+
+    if document_type == "identity":
+        document = verification_request.identity_document
+    elif document_type == "qualification":
+        document = verification_request.qualification_document
+    else:
+        raise Http404("Document not found.")
+
+    if not document:
+        raise Http404("Document not found.")
+
+    try:
+        document.open("rb")
+        response = FileResponse(document, as_attachment=False)
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+    except (OSError, ValueError):
+        raise Http404("Document could not be opened.")
+
 # Creating a service (by a technician)
 @login_required
 def create_service_listing(request):
@@ -172,7 +280,7 @@ def create_service_listing(request):
     ).first()
 
     if not technician:
-        return redirect('technician_setup')
+        return redirect('technicians:technician_setup')
 
     if request.method == 'POST':
         form = ServiceListingForm(request.POST)

@@ -1,5 +1,5 @@
 from django import forms
-from .models import ServiceListing, ServiceCategory, ServiceArea, TechnicianProfile
+from .models import ServiceListing, ServiceCategory, ServiceArea, TechnicianProfile, TechnicianVerificationRequest
 
 
 # Creating a service
@@ -77,3 +77,45 @@ class TechnicianProfileForm(forms.ModelForm):
                 'base_location',
                 'profile_picture',
             ])
+
+# technician verificaton form
+class TechnicianVerificationRequestForm(forms.ModelForm):
+    class Meta:
+        model = TechnicianVerificationRequest
+        fields = [
+            "identity_document",
+            "qualification_document",
+        ]
+
+        labels = {
+            "identity_document": "Identity document",
+            "qualification_document": "Trade certificate or qualification (optional)",
+        }
+
+        help_texts = {
+            "identity_document": "Upload a document that can help verify your identity.",
+            "qualification_document": "Optional evidence of your trade skills or qualifications.",
+        }
+
+# admin review form for technician verification
+class TechnicianVerificationAdminForm(forms.ModelForm):
+    class Meta:
+        model = TechnicianVerificationRequest
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        status = cleaned_data.get("status")
+        reason = cleaned_data.get("review_notes", "").strip()
+
+        if (
+            status == TechnicianVerificationRequest.Status.REJECTED
+            and not reason
+        ):
+            self.add_error(
+                "review_notes",
+                "You must provide a reason when rejecting a verification request."
+            )
+
+        return cleaned_data
