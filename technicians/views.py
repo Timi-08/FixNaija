@@ -5,6 +5,8 @@ from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceA
 from django.db.models import Q, Case, When, Value, IntegerField
 from .search_utils import extract_search_terms, normalize_query, find_related_phrases
 from decimal import Decimal, InvalidOperation
+from django.core.paginator import Paginator
+from django.contrib import messages
 
 # Create your views here.
 
@@ -38,6 +40,128 @@ def technician_setup(request):
         request,
         'technicians/technician_setup.html',
         {'form': form}
+    )
+
+# technician profile view
+@login_required
+def my_technician_profile(request):
+    technician = get_object_or_404(
+        TechnicianProfile.objects.select_related('user'),
+        user=request.user
+    )
+
+    listings = technician.service_listings.filter(
+        is_active=True,
+        is_deleted=False
+    ).select_related(
+        'category'
+    ).prefetch_related(
+        'service_areas'
+    )
+
+    # Search by service title or description
+    search_query = request.GET.get('q', '').strip()
+
+    if search_query:
+        listings = listings.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Filter by category
+    category_id = request.GET.get('category', '')
+
+    if category_id.isdigit():
+        listings = listings.filter(category_id=category_id)
+    else:
+        category_id = ''
+
+    categories = ServiceCategory.objects.filter(
+        is_active=True,
+        service_listings__technician=technician,
+        service_listings__is_active=True,
+        service_listings__is_deleted=False
+    ).distinct()
+
+    # Show 10 services per page
+    paginator = Paginator(listings, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(
+        request,
+        'technicians/my_technician_profile.html',
+        {
+            'technician': technician,
+            'listings': page_obj,
+            'page_obj': page_obj,
+            'categories': categories,
+            'search_query': search_query,
+            'selected_category': category_id,
+        }
+    )
+
+# editing technician profile
+@login_required
+def edit_technician_profile(request):
+    technician = get_object_or_404(
+        TechnicianProfile,
+        user=request.user
+    )
+
+    if request.method == 'POST':
+        form = TechnicianProfileForm(
+            request.POST,
+            request.FILES,
+            instance=technician
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                'Your technician profile was updated successfully.'
+            )
+            return redirect('technicians:my_technician_profile')
+    else:
+        form = TechnicianProfileForm(instance=technician)
+
+    return render(
+        request,
+        'technicians/edit_technician_profile.html',
+        {'form': form, 'technician': technician}
+    )
+
+# Public technician profile
+def technician_public_profile(request, username):
+    technician = get_object_or_404(
+        TechnicianProfile.objects.select_related('user'),
+        user__username=username,
+        user__is_active=True
+    )
+
+    listings = ServiceListing.objects.filter(
+        technician=technician,
+        is_active=True,
+        is_deleted=False,
+        category__is_active=True
+    ).select_related(
+        'category'
+    ).prefetch_related(
+        'service_areas'
+    ).order_by('-created_at')
+
+    # Show 10 services per page
+    paginator = Paginator(listings, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(
+        request,
+        'technicians/technician_public_profile.html',
+        {
+            'technician': technician,
+            'listings': page_obj,
+            'page_obj': page_obj,
+        }
     )
 
 # Creating a service (by a technician)
@@ -154,11 +278,16 @@ def service_list(request):
             listings = listings.none()
 
 
-    return render(      
+    # Paginate public service listings
+    paginator = Paginator(listings.distinct(), 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(
         request,
         'technicians/service_list.html',
         {
-            'listings': listings.distinct(),
+            'listings': page_obj,
+            'page_obj': page_obj,
             'categories': categories,
             'areas': areas,
             'selected_category': category_id,
@@ -207,13 +336,17 @@ def my_services(request):
     listings = ServiceListing.objects.filter(
         technician=technician,
         is_deleted=False
-    ).select_related('category')
+    ).select_related('category').order_by('-created_at')
+
+    paginator = Paginator(listings, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
 
     return render(
         request,
         'technicians/my_services.html',
         {
-            'listings': listings,
+            'listings': page_obj,
+            'page_obj': page_obj,
             'needs_profile': False
         }
     )

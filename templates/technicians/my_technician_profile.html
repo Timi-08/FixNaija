@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Technician Profile | FixNaija</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        #my-active-services {
+            scroll-margin-top: 20px;
+        }
+        
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .verified {
+            color: #176b35;
+            font-weight: bold;
+        }
+
+        .verification-prompt {
+            background: #fff8e5;
+            padding: 16px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <p>
+            <a href="{% url 'accounts:profile' %}">
+                &larr; Back to account profile
+            </a>
+        </p>
+
+        <h1>My Technician Profile</h1>
+
+        <section class="card">
+            {% if technician.profile_picture %}
+                <img
+                    src="{{ technician.profile_picture.url }}"
+                    alt="Your technician profile picture"
+                    class="profile-picture"
+                >
+                {% else %}
+                <img
+                    src="{% static 'images/default-avatar.png' %}"
+                    alt="Default technician profile picture"
+                    class="profile-picture"
+                >
+            {% endif %}
+
+            <h2>{{ technician.user.username }}</h2>
+
+            {% if technician.is_verified %}
+                <p class="verified">✓ Verified Technician</p>
+            {% else %}
+                <div class="verification-prompt">
+                    <h3>Get verified on FixNaija</h3>
+                    <p>
+                        Verification can help customers build trust
+                        when choosing your services.
+                    </p>
+                    <p>
+                        The verification request process will be
+                        available here once it has been implemented.
+                    </p>
+                </div>
+            {% endif %}
+
+            <h3>Professional Information</h3>
+            <p>{{ technician.professional_info|linebreaksbr }}</p>
+
+            <h3>Base Location</h3>
+            <p>{{ technician.base_location }}</p>
+
+            <p>
+                <a href="{% url 'technicians:my_services' %}">
+                    Manage My Services
+                </a>
+
+                <a href="{% url 'technicians:edit_technician_profile' %}">
+                    Edit Profile
+                </a>
+            </p>
+
+            
+        </section>
+
+       
+    <section id="my-active-services">
+        <h2>My Active Services</h2>
+
+    <!-- Search and category filters -->
+    <form method="GET" action="#my-active-services">
+        <label for="q">Search services:</label>
+        <input
+            type="text"
+            id="q"
+            name="q"
+            placeholder="Search by title or description"
+            value="{{ search_query }}"
+        >
+
+        <label for="category">Category:</label>
+        <select name="category" id="category">
+            <option value="">All categories</option>
+
+            {% for category in categories %}
+                <option
+                    value="{{ category.id }}"
+                    {% if selected_category == category.id|stringformat:"s" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Apply Filters</button>
+        <a href="{% url 'technicians:my_technician_profile' %}">
+            Clear Filters
+        </a>
+    </form>
+
+    <p>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }}
+       of {{ page_obj.paginator.count }} services.</p>
+
+    {% for listing in listings %}
+        <article class="card">
+            <h3>{{ listing.title }}</h3>
+
+            <p>Category: {{ listing.category.name }}</p>
+
+            <p>
+                Price: ₦{{ listing.min_price }}
+                {% if listing.max_price %}
+                    – ₦{{ listing.max_price }}
+                {% else %}
+                    and above
+                {% endif %}
+            </p>
+
+            <p>
+                <strong>Service areas:</strong>
+                {% for area in listing.service_areas.all %}
+                    {{ area.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No service areas listed.
+                {% endfor %}
+            </p>
+
+            <!-- Management actions -->
+            <a href="{% url 'technicians:edit_service' listing.id %}">
+                Edit Service
+            </a>
+
+            <a href="{% url 'technicians:service_detail' listing.id %}">
+                View Public Page
+            </a>
+        </article>
+    {% empty %}
+        <p>No active services match your search.</p>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="Service pagination">
+            
+            
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&amp;q={{ search_query|urlencode }}&amp;category={{ selected_category|urlencode }}#my-active-services">
+                Previous
+            </a>
+        {% endif %}
+
+        <span>
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&amp;q={{ search_query|urlencode }}&amp;category={{ selected_category|urlencode }}#my-active-services">
+                Next
+            </a>
+        {% endif %}
+
+        </nav>
+    {% endif %}
+
+    <p>
+        <a href="{% url 'technicians:create_service_listing' %}">
+            Add a New Service
+        </a>
+    </p>
+</section>

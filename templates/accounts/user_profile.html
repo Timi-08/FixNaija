@@ -29,19 +29,33 @@
 			<button type="submit">Save changes</button>
 		</form>
 
-		{% if not has_technician_profile %}
-			<section>
-				<h2>Offer Your Services on FixNaija</h2>
-				<p>
-					Are you a technician or skilled repairer?
-					Create a technician profile to showcase your skills,
-					list your services, set your prices, and connect with customers.
-				</p>
-				<a href="{% url 'technicians:technician_setup' %}">
-					Become a Technician
-				</a>
-			</section>
-		{% endif %}
+		{% if has_technician_profile %}
+    <section>
+        <h2>Your Technician Account</h2>
+        <p>Manage your professional profile and services.</p>
+
+        <a href="{% url 'technicians:my_technician_profile' %}">
+            View My Technician Profile
+        </a>
+
+        <a href="{% url 'technicians:my_services' %}">
+            Manage My Services
+        </a>
+    </section>
+{% else %}
+    <section>
+        <h2>Offer Your Services on FixNaija</h2>
+        <p>
+            Are you a technician or skilled repairer?
+            Create a technician profile to showcase your skills,
+            list your services, set your prices, and connect with customers.
+        </p>
+
+        <a href="{% url 'technicians:technician_setup' %}">
+            Become a Technician
+        </a>
+    </section>
+{% endif %}
 	</main>
 </body>
 </html>

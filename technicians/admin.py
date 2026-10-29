@@ -43,6 +43,7 @@ class ServiceListingAdmin(admin.ModelAdmin):
     filter_horizontal = ('service_areas',)
     readonly_fields = ('created_at',)
     date_hierarchy = 'created_at'
+    list_per_page = 25
     
 @admin.register(TechnicianProfile)
 class TechnicianProfileAdmin(admin.ModelAdmin):
@@ -59,3 +60,4 @@ class TechnicianProfileAdmin(admin.ModelAdmin):
     )
     list_filter = ('is_verified', 'created_at')
     list_select_related = ('user',)
+    readonly_fields = ('created_at',)

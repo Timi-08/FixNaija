@@ -1,10 +1,26 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Technicians | FixNaija</title>
+
+    <style>
+    .technician-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 12px 0;
+    }
+
+    .technician-picture {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+</style>
 </head>
 <body>
     <h1>Find a Technician</h1>
@@ -70,9 +86,29 @@
             </h2>
             <p>Category: {{ listing.category.name }}</p>
 
-            <p>
-                Technician: {{ listing.technician.user.username }}
-            </p>
+            
+<div class="technician-info">
+    {% if listing.technician.profile_picture %}
+        <img
+            src="{{ listing.technician.profile_picture.url }}"
+            alt="{{ listing.technician.user.username }}'s profile picture"
+            class="technician-picture"
+        >
+    {% else %}
+        <img
+            src="{% static 'images/default-avatar.png' %}"
+            alt="Default technician profile picture"
+            class="technician-picture"
+        >
+    {% endif %}
+
+   <p>
+    <a href="{% url 'technicians:technician_public_profile' listing.technician.user.username %}">
+        {{ listing.technician.user.username }}
+    </a>
+</p>
+</div>
+
             {% if listing.technician.is_verified %}
                 <p>✓ Verified Technician</p>
             {% endif %}
@@ -105,5 +141,26 @@
     {% empty %}
         <p>No services are available yet.</p>
     {% endfor %}
+    
+{% if page_obj.has_other_pages %}
+    <nav class="pagination" aria-label="Service pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&amp;q={{ search_query|urlencode }}&amp;category={{ selected_category|urlencode }}&amp;area={{ selected_area|urlencode }}&amp;budget={{ selected_budget|urlencode }}">
+                Previous
+            </a>
+        {% endif %}
+
+        <span>
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&amp;q={{ search_query|urlencode }}&amp;category={{ selected_category|urlencode }}&amp;area={{ selected_area|urlencode }}&amp;budget={{ selected_budget|urlencode }}">
+                Next
+            </a>
+        {% endif %}
+    </nav>
+{% endif %}
+
 </body>
 </html>

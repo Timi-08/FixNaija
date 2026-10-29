@@ -29,6 +29,18 @@ class ServiceListingForm(forms.ModelForm):
 
 # Creating a technician profile
 class TechnicianProfileForm(forms.ModelForm):
+    username = forms.CharField(
+        label="Username",
+        required=False,
+        disabled=True,
+    )
+
+    email = forms.EmailField(
+        label="Email",
+        required=False,
+        disabled=True,
+    )
+
     class Meta:
         model = TechnicianProfile
         fields = [
@@ -36,3 +48,32 @@ class TechnicianProfileForm(forms.ModelForm):
             'base_location',
             'profile_picture',
         ]
+
+        widgets = {
+            'professional_info': forms.Textarea(attrs={
+                'rows': 5,
+                'placeholder': 'Describe your skills and experience',
+            }),
+            'base_location': forms.TextInput(attrs={
+                'placeholder': 'Enter your service location',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            self.fields['username'].initial = (
+                self.instance.user.username
+            )
+            self.fields['email'].initial = (
+                self.instance.user.email
+            )
+
+        self.order_fields([
+                'username',
+                'email',
+                'professional_info',
+                'base_location',
+                'profile_picture',
+            ])
