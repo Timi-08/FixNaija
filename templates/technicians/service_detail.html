@@ -1,169 +1,65 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ listing.title }} | FixNaija</title>
+{% block title %}{{ listing.title }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'technicians:service_list' %}">Back to results</a></p>
+<div class="split" style="grid-template-columns:1fr 300px">
+<div>
+<div class="t card" style="grid-template-columns:80px 1fr">
+<div class="av lg">{% if listing.technician.profile_picture %}<img src="{{ listing.technician.profile_picture.url }}" alt="">{% else %}<img src="{% static 'images/default-avatar.png' %}" alt="">{% endif %}</div>
+<div>
+<h1 style="font-size:30px;margin-bottom:6px"><a href="{% url 'technicians:technician_public_profile' listing.technician.user.username %}" style="color:inherit;text-decoration:none">{{ listing.technician.user.username }}</a></h1>
+{% with technician=listing.technician %}{% include "includes/verification_badge.html" %}{% endwith %}
+<span class="mute small">{{ listing.category.name }}{% if listing.technician.base_location %} · Based in {{ listing.technician.base_location }}{% endif %}</span>
+{% if listing.avg_rating %}<div class="small stars" style="margin-top:6px">Rating {{ listing.avg_rating|floatformat:1 }} out of 5 ({{ listing.review_count }} review{{ listing.review_count|pluralize }})</div>{% endif %}
+</div>
+</div>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 24px;
-            line-height: 1.6;
-            color: #222;
-        }
+<h2 style="margin-top:28px">{{ listing.title }}</h2>
+<div class="card stack">
+<p style="margin:0">{{ listing.description|linebreaksbr }}</p>
+<p style="margin:0"><strong>Service areas:</strong>
+{% for area in listing.service_areas.all %}<span class="chip area">{{ area.name }}</span>{% empty %}<span class="mute">None listed.</span>{% endfor %}</p>
+</div>
 
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 24px;
-            margin: 20px 0;
-        }
+<h2 style="margin-top:28px">Services and rates</h2>
+<table><tr><th>Service</th><th>Rate</th></tr>
+<tr><td>{{ listing.title }}</td><td>₦{{ listing.min_price|floatformat:"0g" }}{% if listing.max_price %} – ₦{{ listing.max_price|floatformat:"0g" }}{% else %} and above{% endif %}</td></tr></table>
 
-        .technician-picture {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 50%;
-        }
+<h2 style="margin-top:28px">About the technician</h2>
+<div class="card"><p style="margin:0">{% if listing.technician.professional_info %}{{ listing.technician.professional_info|linebreaksbr }}{% else %}<span class="mute">No description yet.</span>{% endif %}</p></div>
 
-        .badge {
-            display: inline-block;
-            background: #e6f7eb;
-            color: #176b35;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
+<h2 style="margin-top:28px">Portfolio</h2>
+{% with images=listing.technician.portfolio_images.all %}
+{% if images %}
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+{% for img in images %}<div><div class="photo"><img src="{{ img.image.url }}" alt="{{ img.caption|default:'Portfolio photo' }}"></div>{% if img.caption %}<div class="cap">{{ img.caption }}</div>{% endif %}</div>{% endfor %}
+</div>
+{% else %}<div class="empty">No portfolio photos yet.</div>{% endif %}
+{% endwith %}
 
-        .button {
-            display: inline-block;
-            padding: 10px 16px;
-            margin: 8px 8px 8px 0;
-            border-radius: 5px;
-            text-decoration: none;
-            background: #176b35;
-            color: white;
-        }
+<h2 style="margin-top:28px">Reviews</h2>
+<div class="card">
+{% for r in reviews %}
+<div class="review"><strong>{{ r.reviewer.username }} · {{ r.rating }} out of 5</strong>
+<div class="mute small">{{ r.created_at|date:"j M Y" }}</div>
+{% if r.comment %}<p style="margin:6px 0 0">{{ r.comment }}</p>{% endif %}</div>
+{% empty %}<p class="mute" style="margin:0">No reviews yet. Reviews appear here only after a completed booking.</p>{% endfor %}
+</div>
+</div>
 
-        .secondary {
-            background: #eee;
-            color: #222;
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 14px;
-            }
-
-            .card {
-                padding: 16px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <p>
-        <a href="{% url 'technicians:service_list' %}">
-            &larr; Back to services
-        </a>
-    </p>
-
-    <main>
-        <!-- Service information -->
-        <section class="card">
-            <h1>{{ listing.title }}</h1>
-
-            <p>
-                <strong>Category:</strong>
-                {{ listing.category.name }}
-            </p>
-
-            <h2>About this service</h2>
-            <p>{{ listing.description|linebreaksbr }}</p>
-
-            <h2>Price range</h2>
-            <p>
-                <strong>₦{{ listing.min_price }}</strong>
-
-                {% if listing.max_price %}
-                    – ₦{{ listing.max_price }}
-                {% else %}
-                    and above
-                {% endif %}
-            </p>
-
-            <h2>Service areas</h2>
-            <ul>
-                {% for area in listing.service_areas.all %}
-                    <li>{{ area.name }}</li>
-                {% empty %}
-                    <li>The technician has not listed any service areas.</li>
-                {% endfor %}
-            </ul>
-        </section>
-
-        <!-- Technician information -->
-        <section class="card">
-            <h2>About the technician</h2>
-
-            {% if listing.technician.profile_picture %}
-                <img
-                    src="{{ listing.technician.profile_picture.url }}"
-                    alt="{{ listing.technician.user.username }}'s profile picture"
-                    class="technician-picture"
-                >
-
-                {% else %}
-                <img
-                    src="{% static 'images/default-avatar.png' %}"
-                    alt="Default technician profile picture"
-                    class="technician-picture"
-                >
-            {% endif %}
-
-            <h3>{{ listing.technician.user.username }}</h3>
-
-            {% if listing.technician.is_verified %}
-                <p>
-                    <span class="badge">✓ Verified Technician</span>
-                </p>
-            
-            {% endif %}
-
-            {% if listing.technician.professional_info %}
-                <p>{{ listing.technician.professional_info|linebreaksbr }}</p>
-            {% endif %}
-
-            {% if listing.technician.base_location %}
-                <p>
-                    <strong>Based in:</strong>
-                    {{ listing.technician.base_location }}
-                </p>
-            {% endif %}
-        </section>
-
-        <!-- Contact and booking actions -->
-        <section class="card">
-            <h2>Interested in this service?</h2>
-            <p>Contact the technician or arrange a booking.</p>
-
-            <!-- Connect these actions when the team routes are confirmed. -->
-            <p>
-                <strong>Contact Technician:</strong>
-                Chat functionality will be connected to the technician chat page.
-            </p>
-
-            <p>
-                <strong>Book This Technician:</strong>
-                Booking functionality will be connected to the booking feature.
-            </p>
-        </section>
-    </main>
-
-</body>
-</html>
+<aside class="card">
+<h3>Book this technician</h3>
+{% if is_own_service %}
+<p class="mute small">This is your own service, so you cannot book it.</p>
+<a class="btn alt sm" href="{% url 'technicians:edit_service' listing.id %}">Edit service</a>
+{% elif user.is_authenticated %}
+<p class="mute small">Pick your area and address on the next page.</p>
+<a class="btn" href="{% url 'bookings:book' listing.id %}">Book service</a>
+{% else %}
+<p class="mute small">Log in to send a booking request.</p>
+<a class="btn" href="{% url 'accounts:login' %}?next={% url 'bookings:book' listing.id %}">Log in to book</a>
+{% endif %}
+</aside>
+</div>
+{% endblock %}

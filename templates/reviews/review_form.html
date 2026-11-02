@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Leave a review{% endblock %}
+{% block content %}
+<div class="card form-card">
+<h1 style="font-size:30px">Rate your technician</h1>
+<p>{{ booking.service.title }} by <strong>{{ booking.technician.user.username }}</strong></p>
+<form method="post">
+{% csrf_token %}
+{% include "includes/form_fields.html" %}
+<button class="btn" type="submit">Post review</button>
+<a class="btn alt" href="{{ booking.get_absolute_url }}">Cancel</a>
+</form>
+</div>
+{% endblock %}

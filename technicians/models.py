@@ -44,6 +44,33 @@ class TechnicianProfile(models.Model):
     def __str__(self):
         return f"{self.user} - Technician"
 
+    @property
+    def verification_state(self):
+        """
+        One of "verified", "pending", "rejected" or "unverified".
+        Works with prefetch_related("verification_requests") so lists stay fast.
+        """
+        if self.is_verified:
+            return "verified"
+        requests = list(self.verification_requests.all())
+        if not requests:
+            return "unverified"
+        latest = max(requests, key=lambda r: r.submitted_at)
+        if latest.status == "pending":
+            return "pending"
+        if latest.status == "rejected":
+            return "rejected"
+        return "unverified"
+
+    @property
+    def verification_label(self):
+        return {
+            "verified": "Verified",
+            "pending": "Pending Verification",
+            "rejected": "Rejected",
+            "unverified": "Not verified",
+        }[self.verification_state]
+
 # Request to get verified by fixnaija admins
 class TechnicianVerificationRequest(models.Model):
     class Status(models.TextChoices):
@@ -157,3 +184,20 @@ class ServiceListing(models.Model):
 
     def __str__(self):
         return self.title
+
+# Portfolio pictures of a technician's past work
+class PortfolioImage(models.Model):
+    technician = models.ForeignKey(
+        TechnicianProfile,
+        on_delete=models.CASCADE,
+        related_name="portfolio_images",
+    )
+    image = models.ImageField(upload_to="portfolio/")
+    caption = models.CharField(max_length=140, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+
+    def __str__(self):
+        return self.caption or f"Portfolio image {self.pk}"

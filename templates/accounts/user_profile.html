@@ -1,61 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Your profile{% endblock %}
+{% block content %}
+<h1 style="font-size:32px">Your profile</h1>
+<div class="split" style="grid-template-columns:1fr 340px">
+<form method="post" class="card">
+{% csrf_token %}
+<h2>Account details</h2>
+{% with form=user_form %}{% include "includes/form_fields.html" %}{% endwith %}
+<h2 style="margin-top:20px">Contact details</h2>
+{% with form=profile_form %}{% include "includes/form_fields.html" %}{% endwith %}
+<button class="btn" type="submit">Save changes</button>
+</form>
 
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Your profile | FixNaija</title>
-</head>
-<body>
-	<main>
-		<header>
-			<h1>Your profile</h1>
-			<form method="post" action="{% url 'accounts:logout' %}">
-				{% csrf_token %}
-				<button type="submit">Sign out</button>
-			</form>
-		</header>
-
-		<form method="post">
-			{% csrf_token %}
-			<fieldset>
-				<legend>Account details</legend>
-				{{ user_form.as_p }}
-			</fieldset>
-			<fieldset>
-				<legend>Contact details</legend>
-				{{ profile_form.as_p }}
-			</fieldset>
-			<button type="submit">Save changes</button>
-		</form>
-
-		{% if has_technician_profile %}
-    <section>
-        <h2>Your Technician Account</h2>
-        <p>Manage your professional profile and services.</p>
-
-        <a href="{% url 'technicians:my_technician_profile' %}">
-            View My Technician Profile
-        </a>
-
-        <a href="{% url 'technicians:my_services' %}">
-            Manage My Services
-        </a>
-    </section>
+<aside class="stack">
+{% if has_technician_profile %}
+<div class="card"><h3>Your technician account</h3>
+<p class="mute small">Manage your professional profile and services.</p>
+<div class="stack">
+<a class="btn" href="{% url 'technicians:my_technician_profile' %}">View my technician profile</a>
+<a class="btn alt" href="{% url 'technicians:my_services' %}">Manage my services</a>
+<a class="btn alt" href="{% url 'bookings:incoming' %}">Job requests</a>
+</div></div>
 {% else %}
-    <section>
-        <h2>Offer Your Services on FixNaija</h2>
-        <p>
-            Are you a technician or skilled repairer?
-            Create a technician profile to showcase your skills,
-            list your services, set your prices, and connect with customers.
-        </p>
-
-        <a href="{% url 'technicians:technician_setup' %}">
-            Become a Technician
-        </a>
-    </section>
+<div class="card"><h3>Offer your services</h3>
+<p class="mute small">Are you a technician or skilled repairer? Create a technician profile to list your services, set your prices and connect with customers.</p>
+<a class="btn" href="{% url 'technicians:technician_setup' %}">Become a technician</a></div>
 {% endif %}
-	</main>
-</body>
-</html>
+<div class="card"><h3>As a customer</h3>
+<div class="stack">
+<a class="btn alt" href="{% url 'bookings:my_bookings' %}">My bookings</a>
+<a class="btn alt" href="{% url 'reviews:report' %}">Report a problem</a>
+</div></div>
+</aside>
+</div>
+{% endblock %}

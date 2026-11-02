@@ -1,0 +1,21 @@
+<footer><div class="wrap">
+<div><a class="brand" href="{% url 'core:home' %}">Fix<b>Naija</b></a><p class="mute small">Local repair and technician finder.</p></div>
+<div class="small"><strong>Customers</strong>
+  <a href="{% url 'technicians:service_list' %}">Find technicians</a>
+  {% if user.is_authenticated %}<a href="{% url 'bookings:my_bookings' %}">My bookings</a>{% endif %}
+</div>
+<div class="small"><strong>Technicians</strong>
+  {% if user.technicianprofile %}
+    <a href="{% url 'technicians:my_technician_profile' %}">My technician profile</a>
+    <a href="{% url 'bookings:incoming' %}">Incoming requests</a>
+  {% else %}
+    <a href="{% url 'technicians:technician_setup' %}">Set up a profile</a>
+  {% endif %}
+</div>
+{% if user.is_authenticated %}
+<div class="small"><strong>Help</strong>
+  <a href="{% url 'reviews:report' %}">Report a problem</a>
+  <a href="{% url 'reviews:my_reports' %}">My reports</a>
+</div>
+{% endif %}
+</div></footer>

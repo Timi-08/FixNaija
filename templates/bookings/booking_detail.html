@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Booking #{{ booking.pk }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% if viewer_is_technician %}{% url 'bookings:incoming' %}{% else %}{% url 'bookings:my_bookings' %}{% endif %}">Back to bookings</a></p>
+<div class="card form-card wide" style="max-width:760px">
+<div class="row between"><h1 style="font-size:30px;margin:0">Booking #{{ booking.pk }}</h1>{% include "includes/status_badge.html" %}</div>
+
+<div class="flow" style="margin-top:16px">
+{% with s=booking.status %}
+<span class="done">Requested</span>
+<span {% if s == 'accepted' or s == 'in_progress' or s == 'completed' %}class="done"{% endif %}>Accepted</span>
+<span {% if s == 'in_progress' or s == 'completed' %}class="done"{% endif %}>In Progress</span>
+<span {% if s == 'completed' %}class="done"{% endif %}>Completed</span>
+{% endwith %}
+</div>
+{% if booking.status == "rejected" or booking.status == "cancelled" %}<p class="mute small">This job ended as {{ booking.get_status_display }}.</p>{% endif %}
+
+<dl class="facts" style="margin-top:16px">
+<dt>Service</dt><dd><a href="{% url 'technicians:service_detail' booking.service.id %}">{{ booking.service.title }}</a>
+<span class="mute small">(₦{{ booking.service.min_price|floatformat:"0g" }}{% if booking.service.max_price %} – ₦{{ booking.service.max_price|floatformat:"0g" }}{% else %}+{% endif %})</span></dd>
+<dt>Customer</dt><dd>{{ booking.customer.username }}</dd>
+<dt>Technician</dt><dd><a href="{% url 'technicians:technician_public_profile' booking.technician.user.username %}">{{ booking.technician.user.username }}</a></dd>
+<dt>Area</dt><dd>{{ booking.area.name }}</dd>
+<dt>Address</dt><dd>{{ booking.address }}</dd>
+<dt>Preferred date</dt><dd>{% if booking.preferred_date %}{{ booking.preferred_date|date:"j M Y" }}{% else %}Not specified{% endif %}</dd>
+<dt>Problem</dt><dd>{{ booking.description|default:"No description given."|linebreaksbr }}</dd>
+<dt>Requested</dt><dd>{{ booking.request_date|date:"j M Y, g:i a" }}</dd>
+</dl>
+
+{% if actions %}
+<div class="row" style="margin-top:20px">
+{% if "accepted" in actions %}<form method="post" action="{% url 'bookings:change_status' booking.pk 'accepted' %}">{% csrf_token %}<button class="btn" type="submit">Accept request</button></form>{% endif %}
+{% if "rejected" in actions %}<form method="post" action="{% url 'bookings:change_status' booking.pk 'rejected' %}">{% csrf_token %}<button class="btn bad" type="submit">Reject request</button></form>{% endif %}
+{% if "in_progress" in actions %}<form method="post" action="{% url 'bookings:change_status' booking.pk 'in_progress' %}">{% csrf_token %}<button class="btn" type="submit">Start job</button></form>{% endif %}
+{% if "completed" in actions %}<form method="post" action="{% url 'bookings:change_status' booking.pk 'completed' %}">{% csrf_token %}<button class="btn" type="submit">Mark completed</button></form>{% endif %}
+{% if "cancelled" in actions %}<form method="post" action="{% url 'bookings:change_status' booking.pk 'cancelled' %}" onsubmit="return confirm('Cancel this job?')">{% csrf_token %}<button class="btn bad" type="submit">Cancel job</button></form>{% endif %}
+</div>
+{% endif %}
+
+{% if review %}
+<h2 style="margin-top:28px">Review</h2>
+<div class="card"><strong>{{ review.reviewer.username }} · {{ review.rating }} out of 5</strong>
+{% if review.comment %}<p class="mute" style="margin:6px 0 0">{{ review.comment }}</p>{% endif %}</div>
+{% elif can_review %}
+<div style="margin-top:24px"><a class="btn" href="{% url 'reviews:leave' booking.pk %}">Rate and review this job</a></div>
+{% endif %}
+
+<p class="small" style="margin-top:24px"><a href="{% url 'reviews:report' %}?booking={{ booking.pk }}">Report a problem with this booking</a></p>
+</div>
+{% endblock %}

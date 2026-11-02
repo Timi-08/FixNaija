@@ -1,19 +1,14 @@
-<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Create account | FixNaija</title>
-</head>
-<body>
-	<main>
-		<h1>Create your FixNaija account</h1>
-		<form method="post">
-			{% csrf_token %}
-			{{ form.as_p }}
-			<button type="submit">Create account</button>
-		</form>
-		<p>Already registered? <a href="{% url 'accounts:login' %}">Sign in</a></p>
-	</main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="card form-card">
+<h1 style="font-size:30px">Create your FixNaija account</h1>
+<p class="mute">One account lets you book technicians and offer your own services.</p>
+<form method="post">
+{% csrf_token %}
+{% include "includes/form_fields.html" %}
+<button class="btn" type="submit">Create account</button>
+</form>
+<p class="mute" style="margin-top:16px">Already registered? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+</div>
+{% endblock %}

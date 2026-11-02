@@ -83,6 +83,18 @@ urlpatterns = [
         name="technician_public_profile",
     ),
 
+    # portfolio pictures(technician only)
+    path(
+        "portfolio/add/",
+        views.add_portfolio_image,
+        name="add_portfolio_image",
+    ),
+    path(
+        "portfolio/<int:image_id>/delete/",
+        views.delete_portfolio_image,
+        name="delete_portfolio_image",
+    ),
+
     # verification request
     path(
     "verification/request/",

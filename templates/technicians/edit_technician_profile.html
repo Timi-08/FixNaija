@@ -1,24 +1,13 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Technician Profile | FixNaija</title>
-</head>
-<body>
-    <h1>Edit Technician Profile</h1>
-
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        {{ form.as_p }}
-
-        <button type="submit">Save Changes</button>
-
-        <a href="{% url 'technicians:my_technician_profile' %}">
-            Cancel
-        </a>
-    </form>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Edit technician profile{% endblock %}
+{% block content %}
+<div class="card form-card wide">
+<h1 style="font-size:30px">Edit technician profile</h1>
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+{% include "includes/form_fields.html" %}
+<button class="btn" type="submit">Save changes</button>
+<a class="btn alt" href="{% url 'technicians:my_technician_profile' %}">Cancel</a>
+</form>
+</div>
+{% endblock %}

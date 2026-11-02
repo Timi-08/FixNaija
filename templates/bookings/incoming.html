@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Job requests{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="font-size:32px;margin:0">Incoming requests</h1>
+<form method="get" class="row"><label for="status" class="small" style="margin:0">Status</label>
+<select id="status" name="status" style="width:auto" onchange="this.form.submit()">
+<option value="">All</option>
+{% for value, label in statuses %}<option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select><noscript><button class="btn sm" type="submit">Filter</button></noscript></form></div>
+<p class="mute">Jobs customers have booked with you.</p>
+
+{% if page_obj.object_list %}
+<div class="scroll"><table>
+<tr><th>Customer</th><th>Service</th><th>Address</th><th>Requested</th><th>Status</th><th>Actions</th></tr>
+{% for booking in page_obj %}
+<tr>
+<td>{{ booking.customer.username }}</td>
+<td>{{ booking.service.title }}</td>
+<td>{{ booking.address }}<div class="mute small">{{ booking.area.name }}</div></td>
+<td>{{ booking.request_date|date:"j M Y" }}</td>
+<td>{% include "includes/status_badge.html" %}</td>
+<td><div class="row">
+{% if booking.status == "requested" %}
+<form method="post" action="{% url 'bookings:change_status' booking.id 'accepted' %}" class="inline">{% csrf_token %}<button class="btn sm" type="submit">Accept</button></form>
+<form method="post" action="{% url 'bookings:change_status' booking.id 'rejected' %}" class="inline">{% csrf_token %}<button class="btn bad sm" type="submit">Reject</button></form>
+{% elif booking.status == "accepted" %}
+<form method="post" action="{% url 'bookings:change_status' booking.id 'in_progress' %}" class="inline">{% csrf_token %}<button class="btn sm" type="submit">Start job</button></form>
+{% elif booking.status == "in_progress" %}
+<form method="post" action="{% url 'bookings:change_status' booking.id 'completed' %}" class="inline">{% csrf_token %}<button class="btn sm" type="submit">Mark completed</button></form>
+{% endif %}
+<a class="btn alt sm" href="{{ booking.get_absolute_url }}">Open</a>
+</div></td>
+</tr>
+{% endfor %}
+</table></div>
+{% include "includes/pagination.html" with querystring="status="|add:current_status %}
+{% else %}
+<div class="empty">No job requests yet.</div>
+{% endif %}
+{% endblock %}

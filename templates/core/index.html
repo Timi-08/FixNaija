@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="hero">
+<div>
+<h1>Book a verified electrician, plumber or AC technician near you in Lagos.</h1>
+<p class="mute">See rates before you book, check real customer reviews, and track the job from request to completion.</p>
+</div>
+<form class="card search hero-search" method="get" action="{% url 'technicians:service_list' %}">
+<div><label for="sk">Skill</label><input id="sk" name="q" placeholder="e.g. AC repair, Tailor"></div>
+<div><label for="ar">Area</label>
+<select id="ar" name="area"><option value="">Any area</option>{% for a in areas %}<option value="{{ a.id }}">{{ a.name }}</option>{% endfor %}</select></div>
+<button class="btn" type="submit">Search technicians</button>
+</form>
+</div>
+
+<h2 style="margin-top:48px">How a booking works</h2>
+<div class="steps">
+<div class="card"><h3>Request</h3><p class="mute small">Pick a technician and service, add your address, and send the request.</p></div>
+<div class="card"><h3>Accepted or rejected</h3><p class="mute small">The technician reviews the request and responds.</p></div>
+<div class="card"><h3>In progress</h3><p class="mute small">Work starts on site. You can follow the status from your bookings page.</p></div>
+<div class="card"><h3>Completed and reviewed</h3><p class="mute small">After the job is done you can rate and review the technician.</p></div>
+</div>
+
+<h2 style="margin-top:48px">Browse by skill</h2>
+{% if categories %}
+<div class="grid">
+{% for c in categories %}<a class="card" href="{% url 'technicians:service_list' %}?category={{ c.id }}">{{ c.name }}</a>{% endfor %}
+</div>
+{% else %}
+<div class="empty">No skill categories yet. An admin can add them in the admin panel.</div>
+{% endif %}
+{% endblock %}

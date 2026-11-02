@@ -1,0 +1,1 @@
+<span class="badge {% if booking.status == 'completed' %}b-ok{% elif booking.status == 'requested' %}b-wait{% elif booking.status == 'rejected' or booking.status == 'cancelled' %}b-no{% else %}b-run{% endif %}">{{ booking.get_status_display }}</span>
