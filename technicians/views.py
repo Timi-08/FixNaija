@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import ServiceListingForm, TechnicianProfileForm, TechnicianVerificationRequestForm, PortfolioImageForm
 from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceArea, TechnicianVerificationRequest, PortfolioImage
@@ -146,12 +147,18 @@ def edit_technician_profile(request):
         )
 
         if form.is_valid():
-            form.save()
-            user_profile.phone = form.cleaned_data['phone']
-            user_profile.save(update_fields=['phone', 'updated_at'])
+            with transaction.atomic():
+                form.save()
+                user_profile.phone = form.cleaned_data['phone']
+                user_profile.save(update_fields=['phone', 'updated_at'])
+
+                base_locations = list(technician.base_locations.all())
+                for listing in technician.service_listings.all():
+                    listing.service_areas.set(base_locations)
+
             messages.success(
                 request,
-                'Your technician profile was updated successfully.'
+                'Your technician profile and service areas were updated successfully.'
             )
             return redirect('technicians:my_technician_profile')
     else:

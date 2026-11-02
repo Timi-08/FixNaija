@@ -224,6 +224,40 @@ class TechnicianSetupFlowTests(TestCase):
             {self.ajah.pk, self.ikeja.pk},
         )
 
+    def test_editing_base_locations_updates_all_service_areas(self):
+        technician = TechnicianProfile.objects.create(
+            user=self.user,
+            professional_info="Experienced plumbing repairs and installation.",
+        )
+        technician.categories.add(self.category)
+        technician.base_locations.add(self.ajah)
+        listings = []
+        for title in ("Pipe repair", "Tap installation"):
+            listing = ServiceListing.objects.create(
+                technician=technician,
+                category=self.category,
+                title=title,
+                description="Experienced plumbing repairs and installation.",
+                min_price=5000,
+            )
+            listing.service_areas.add(self.ajah)
+            listings.append(listing)
+
+        response = self.client.post(
+            reverse("technicians:edit_technician_profile"),
+            self.setup_data(base_locations=[str(self.ikeja.pk)]),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("technicians:my_technician_profile"),
+        )
+        for listing in listings:
+            self.assertEqual(
+                set(listing.service_areas.values_list("pk", flat=True)),
+                {self.ikeja.pk},
+            )
+
     def test_setup_requires_phone(self):
         response = self.client.post(self.setup_url, self.setup_data(phone=""))
 
