@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ServiceCategory,ServiceArea, ServiceListing, TechnicianProfile, TechnicianVerificationRequest
+from .models import ServiceCategory,ServiceArea, ServiceListing, TechnicianProfile, TechnicianVerificationRequest, PortfolioImage
 from .forms import TechnicianVerificationAdminForm
 from django.utils import timezone
 from django.urls import reverse
@@ -50,8 +50,14 @@ class ServiceListingAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     list_per_page = 25
     
+class PortfolioImageInline(admin.TabularInline):
+    model = PortfolioImage
+    extra = 0
+
+
 @admin.register(TechnicianProfile)
 class TechnicianProfileAdmin(admin.ModelAdmin):
+    inlines = [PortfolioImageInline]
     list_display = (
         'user',
         'base_location',

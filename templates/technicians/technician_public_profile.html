@@ -1,182 +1,48 @@
-
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ technician.user.username }} | FixNaija</title>
+{% block title %}{{ technician.user.username }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'technicians:service_list' %}">Back to results</a></p>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 24px;
-            background: #f5f7fa;
-            color: #222;
-        }
+<div class="t card" style="grid-template-columns:80px 1fr">
+<div class="av lg">{% if technician.profile_picture %}<img src="{{ technician.profile_picture.url }}" alt="">{% else %}<img src="{% static 'images/default-avatar.png' %}" alt="">{% endif %}</div>
+<div>
+<h1 style="font-size:30px;margin-bottom:6px">{{ technician.user.username }}</h1>
+{% include "includes/verification_badge.html" %}
+{% if technician.base_location %}<span class="mute small">Based in {{ technician.base_location }}</span>{% endif %}
+{% if review_count %}<div class="small stars" style="margin-top:6px">Rating {{ avg_rating|floatformat:1 }} out of 5 ({{ review_count }} review{{ review_count|pluralize }})</div>{% endif %}
+</div>
+</div>
+{% if technician.professional_info %}<div class="card" style="margin-top:12px"><p style="margin:0">{{ technician.professional_info|linebreaksbr }}</p></div>{% endif %}
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+<h2 style="margin-top:28px">Services and rates</h2>
+{% if listings %}
+<div class="scroll"><table><tr><th>Service</th><th>Category</th><th>Rate</th><th></th></tr>
+{% for listing in listings %}
+<tr><td><a href="{% url 'technicians:service_detail' listing.id %}">{{ listing.title }}</a><div class="mute small">{{ listing.description|truncatewords:18 }}</div></td>
+<td>{{ listing.category.name }}</td>
+<td>₦{{ listing.min_price|floatformat:"0g" }}{% if listing.max_price %} – ₦{{ listing.max_price|floatformat:"0g" }}{% else %}+{% endif %}</td>
+<td><a class="btn sm" href="{% url 'technicians:service_detail' listing.id %}">View</a></td></tr>
+{% endfor %}
+</table></div>
+{% include "includes/pagination.html" %}
+{% else %}<div class="empty">This technician has no services available right now.</div>{% endif %}
 
-        .profile-card {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
+<h2 style="margin-top:28px">Portfolio</h2>
+{% with images=technician.portfolio_images.all %}
+{% if images %}
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+{% for img in images %}<div><div class="photo"><img src="{{ img.image.url }}" alt="{{ img.caption|default:'Portfolio photo' }}"></div>{% if img.caption %}<div class="cap">{{ img.caption }}</div>{% endif %}</div>{% endfor %}
+</div>
+{% else %}<div class="empty">No portfolio photos yet.</div>{% endif %}
+{% endwith %}
 
-        .profile-picture {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .verified {
-            color: #16803c;
-            font-weight: bold;
-        }
-
-        .services {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .service-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-        }
-
-        .service-card h3 {
-            margin-top: 0;
-        }
-
-        .price {
-            font-weight: bold;
-            margin: 12px 0;
-        }
-
-        a {
-            color: #155eef;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .empty-state {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-        }
-    </style>
-</head>
-<body>
-    <main class="container">
-        <a href="{% url 'technicians:service_list' %}">
-            &larr; Browse services
-        </a>
-
-        <section class="profile-card">
-            {% if technician.profile_picture %}
-                <img
-                    src="{{ technician.profile_picture.url }}"
-                    alt="{{ technician.user.username }}'s profile picture"
-                    class="profile-picture"
-                >
-            {% else %}
-                <img
-                    src="{% static 'images/default-avatar.png' %}"
-                    alt="Default technician profile picture"
-                    class="profile-picture"
-                >
-            {% endif %}
-
-            <div>
-                <h1>{{ technician.user.username }}</h1>
-
-                {% if technician.is_verified %}
-                    <p class="verified">✓ Verified technician</p>
-                {% endif %}
-
-                {% if technician.base_location %}
-                    <p><strong>Location:</strong> {{ technician.base_location }}</p>
-                {% endif %}
-
-                {% if technician.professional_info %}
-                    <p>{{ technician.professional_info }}</p>
-                {% endif %}
-            </div>
-        </section>
-
-      
-<section>
-    <h2>Services offered</h2>
-
-    {% if listings %}
-        <div class="services">
-            {% for listing in listings %}
-                <article class="service-card">
-                    <h3>{{ listing.title }}</h3>
-
-                    <p>
-                        <strong>Category:</strong>
-                        {{ listing.category.name }}
-                    </p>
-
-                    <p>{{ listing.description|truncatewords:25 }}</p>
-
-                    <p class="price">
-                        From ₦{{ listing.min_price|floatformat:2 }}
-                        {% if listing.max_price %}
-                            – ₦{{ listing.max_price|floatformat:2 }}
-                        {% endif %}
-                    </p>
-
-                    <a href="{% url 'technicians:service_detail' listing.id %}">
-                        View service details
-                    </a>
-                </article>
-            {% endfor %}
-        </div>
-
-        {% if page_obj.has_other_pages %}
-            <nav aria-label="Service pagination">
-                {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}">
-                        Previous
-                    </a>
-                {% endif %}
-
-                <span>
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </span>
-
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}">
-                        Next
-                    </a>
-                {% endif %}
-            </nav>
-        {% endif %}
-
-    {% else %}
-        <div class="empty-state">
-            <p>This technician has no services available right now.</p>
-        </div>
-    {% endif %}
-</section>
-
-    </main>
-</body>
-</html>
+<h2 style="margin-top:28px">Reviews</h2>
+<div class="card">
+{% for r in reviews %}
+<div class="review"><strong>{{ r.reviewer.username }} · {{ r.rating }} out of 5</strong>
+<div class="mute small">{{ r.created_at|date:"j M Y" }}</div>
+{% if r.comment %}<p style="margin:6px 0 0">{{ r.comment }}</p>{% endif %}</div>
+{% empty %}<p class="mute" style="margin:0">No reviews yet. Reviews appear here only after a completed booking.</p>{% endfor %}
+</div>
+{% endblock %}

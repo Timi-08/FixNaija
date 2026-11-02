@@ -1,22 +1,14 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete Service | FixNaija</title>
-</head>
-<body>
-    <h1>Delete Service</h1>
-
-    <p>Are you sure you want to delete "{{ listing.title }}"?</p>
-    <p>This service will no longer appear in public listings.</p>
-
-    <form method="POST">
-        {% csrf_token %}
-        <button type="submit">Yes, Delete Service</button>
-    </form>
-
-    <a href="{% url 'technicians:my_services' %}">Cancel</a>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Delete service{% endblock %}
+{% block content %}
+<div class="card form-card">
+<h1 style="font-size:30px">Delete service</h1>
+<p>Are you sure you want to delete "{{ listing.title }}"?</p>
+<p class="mute">This service will no longer appear in public listings.</p>
+<form method="post">
+{% csrf_token %}
+<button class="btn bad" type="submit">Yes, delete service</button>
+<a class="btn alt" href="{% url 'technicians:my_services' %}">Cancel</a>
+</form>
+</div>
+{% endblock %}

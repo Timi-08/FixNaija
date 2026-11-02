@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block content %}
+<div class="nf">
+<div class="code">404</div>
+<h1>We could not find that page.</h1>
+<p class="mute">The link may be broken, or the technician profile or booking you want may have been removed.</p>
+<a class="btn" href="{% url 'technicians:service_list' %}">Find technicians</a>
+<a class="btn alt" href="{% url 'core:home' %}">Go to home page</a>
+</div>
+{% endblock %}

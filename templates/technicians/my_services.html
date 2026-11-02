@@ -1,89 +1,34 @@
+{% extends "base.html" %}
+{% block title %}My services{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="font-size:32px;margin:0">My services</h1>
+{% if not needs_profile %}<a class="btn" href="{% url 'technicians:create_service_listing' %}">Add a new service</a>{% endif %}</div>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Services | FixNaija</title>
-</head>
-<body>
-    <h1>My Services</h1>
-    
-
-    {% if needs_profile %}
-        <h2>You need a technician profile</h2>
-
-        <p>
-            You haven't created a technician profile yet.
-            Create one to start offering your services on FixNaija.
-        </p>
-
-        <a href="{% url 'technicians:technician_setup' %}">Create Technician Profile</a>
-
-    {% else %}
-        <a href="{% url 'technicians:create_service_listing' %}">
-            Add a New Service
-        </a>
-
-        {% for listing in listings %}
-            <article>
-                <h2>{{ listing.title }}</h2>
-                <a href="{% url 'technicians:edit_service' listing.id %}">
-                Edit Service
-                </a>
-                <a href="{% url 'technicians:delete_service' listing.id %}">
-                    Delete Service
-                </a>
-                
-                <form method="POST" action="{% url 'technicians:toggle_service_status' listing.id %}">
-                    {% csrf_token %}
-
-                    {% if listing.is_active %}
-                        <button type="submit">Pause Service</button>
-                    {% else %}
-                        <button type="submit">Reactivate Service</button>
-                    {% endif %}
-                </form>
-
-                <p>Category: {{ listing.category.name }}</p>
-                <p>Minimum price: ₦{{ listing.min_price }}</p>
-
-                {% if listing.max_price %}
-                    <p>Maximum price: ₦{{ listing.max_price }}</p>
-                {% else %}
-                    <p>No maximum price specified</p>
-                {% endif %}
-
-                {% if listing.is_deleted %}
-                    <p>Deleted</p>
-                {% elif listing.is_active %}
-                    <p>Active</p>
-                {% else %}
-                    <p>Inactive</p>
-                {% endif %}
-            </article>
-            <hr>
-        {% empty %}
-            <p>You haven't added any services yet.</p>
-        {% endfor %}
-
-        
-{% if page_obj.has_other_pages %}
-    <nav aria-label="Service pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
-        {% endif %}
-
-        <span>
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">Next</a>
-        {% endif %}
-    </nav>
+{% if needs_profile %}
+<div class="card" style="margin-top:20px"><h2>You need a technician profile</h2>
+<p>You have not created a technician profile yet. Create one to start offering your services on FixNaija.</p>
+<a class="btn" href="{% url 'technicians:technician_setup' %}">Create technician profile</a></div>
+{% else %}
+<div class="scroll" style="margin-top:20px">
+{% if listings %}
+<table><tr><th>Service</th><th>Category</th><th>Rate</th><th>Status</th><th>Actions</th></tr>
+{% for listing in listings %}
+<tr>
+<td><strong>{{ listing.title }}</strong></td>
+<td>{{ listing.category.name }}</td>
+<td>₦{{ listing.min_price|floatformat:"0g" }}{% if listing.max_price %} – ₦{{ listing.max_price|floatformat:"0g" }}{% else %} and above{% endif %}</td>
+<td>{% if listing.is_active %}<span class="badge b-ok">Active</span>{% else %}<span class="badge b-wait">Paused</span>{% endif %}</td>
+<td><div class="row">
+<a class="btn alt sm" href="{% url 'technicians:edit_service' listing.id %}">Edit</a>
+<form method="post" action="{% url 'technicians:toggle_service_status' listing.id %}" class="inline">{% csrf_token %}
+<button class="btn warn sm" type="submit">{% if listing.is_active %}Pause{% else %}Reactivate{% endif %}</button></form>
+<a class="btn bad sm" href="{% url 'technicians:delete_service' listing.id %}">Delete</a>
+</div></td>
+</tr>
+{% endfor %}
+</table>
+{% else %}<div class="empty">You have not added any services yet.</div>{% endif %}
+</div>
+{% include "includes/pagination.html" %}
 {% endif %}
-
-    {% endif %}
-</body>
-</html>
+{% endblock %}

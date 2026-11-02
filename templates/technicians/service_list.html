@@ -1,166 +1,64 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Find Technicians | FixNaija</title>
-
-    <style>
-    .technician-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 12px 0;
-    }
-
-    .technician-picture {
-        width: 48px;
-        height: 48px;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-</style>
-</head>
-<body>
-    <h1>Find a Technician</h1>
-    
-
-<form method="GET">
-<label for="search">Search services or technicians:</label>
-<input
-    type="text"
-    name="q"
-    id="search"
-    placeholder="e.g. iPhone screen repair"
-    value="{{ search_query }}"
->
-
-    <label for="budget">Your maximum budget (₦):</label>
-    <input
-        type="number"
-        name="budget"
-        id="budget"
-        min="0"
-        step="0.01"
-        placeholder="e.g. 20000"
-        value="{{ selected_budget }}"
-    >
-    <label for="category">Filter by category:</label>
-    <select name="category" id="category">
-        <option value="">All categories</option>
-        {% for category in categories %}
-            <option value="{{ category.id }}"
-                {% if selected_category == category.id|stringformat:"s" %}
-                    selected
-                {% endif %}>
-                {{ category.name }}
-            </option>
-        {% endfor %}
-    </select>
-
-    <label for="area">Filter by service area:</label>
-    <select name="area" id="area">
-        <option value="">All areas</option>
-        {% for area in areas %}
-            <option value="{{ area.id }}"
-                {% if selected_area == area.id|stringformat:"s" %}
-                    selected
-                {% endif %}>
-                {{ area.name }}
-            </option>
-        {% endfor %}
-    </select>
-
-    <button type="submit">Filter</button>
+{% block title %}Find technicians{% endblock %}
+{% block content %}
+<h1 style="font-size:32px">Find technicians</h1>
+<div class="split">
+<form class="card filters" method="get">
+<div><label for="search">Search</label>
+<input type="text" name="q" id="search" placeholder="e.g. iPhone screen repair" value="{{ search_query }}"></div>
+<div><label for="category">Skill</label>
+<select name="category" id="category">
+<option value="">All categories</option>
+{% for category in categories %}<option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>{% endfor %}
+</select></div>
+<div><label for="area">Area</label>
+<select name="area" id="area">
+<option value="">All areas</option>
+{% for area in areas %}<option value="{{ area.id }}" {% if selected_area == area.id|stringformat:"s" %}selected{% endif %}>{{ area.name }}</option>{% endfor %}
+</select></div>
+<div><label for="min_rating">Minimum rating</label>
+<select name="min_rating" id="min_rating">
+<option value="">Any</option>
+<option value="3" {% if selected_min_rating == "3" %}selected{% endif %}>3 and up</option>
+<option value="4" {% if selected_min_rating == "4" %}selected{% endif %}>4 and up</option>
+</select></div>
+<div><label for="verified">Verification</label>
+<select name="verified" id="verified">
+<option value="">All</option>
+<option value="1" {% if verified_only %}selected{% endif %}>Verified only</option>
+</select></div>
+<div><label for="budget">Maximum rate (₦)</label>
+<input type="number" name="budget" id="budget" min="0" step="0.01" inputmode="numeric" placeholder="e.g. 10000" value="{{ selected_budget }}"></div>
+<button class="btn" type="submit">Apply filters</button>
+<a class="small" href="{% url 'technicians:service_list' %}">Clear filters</a>
 </form>
 
-
-
-    {% for listing in listings %}
-        <article>
-            <h2>
-                <a href="{% url 'technicians:service_detail' listing.id %}">
-                    {{ listing.title }}
-                </a>
-            </h2>
-            <p>Category: {{ listing.category.name }}</p>
-
-            
-<div class="technician-info">
-    {% if listing.technician.profile_picture %}
-        <img
-            src="{{ listing.technician.profile_picture.url }}"
-            alt="{{ listing.technician.user.username }}'s profile picture"
-            class="technician-picture"
-        >
-    {% else %}
-        <img
-            src="{% static 'images/default-avatar.png' %}"
-            alt="Default technician profile picture"
-            class="technician-picture"
-        >
-    {% endif %}
-
-   <p>
-    <a href="{% url 'technicians:technician_public_profile' listing.technician.user.username %}">
-        {{ listing.technician.user.username }}
-    </a>
-</p>
-</div>
-
-            {% if listing.technician.is_verified %}
-                <p>✓ Verified Technician</p>
-            {% endif %}
-
-            <p>{{ listing.description }}</p>
-
-            <p>
-                Price: ₦{{ listing.min_price }}
-                {% if listing.max_price %}
-                    - ₦{{ listing.max_price }}
-                {% else %}
-                    and above
-                {% endif %}
-            </p>
-
-            <p>Service areas:
-                {% for area in listing.service_areas.all %}
-                    {{ area.name }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    No service areas listed.
-                {% endfor %}
-            </p>
-
-            <a href="{% url 'technicians:service_detail' listing.id %}">
-            View Details
-            </a>
-        </article>
-
-        <hr>
-    {% empty %}
-        <p>No services are available yet.</p>
-    {% endfor %}
-    
-{% if page_obj.has_other_pages %}
-    <nav class="pagination" aria-label="Service pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}&amp;q={{ search_query|urlencode }}&amp;category={{ selected_category|urlencode }}&amp;area={{ selected_area|urlencode }}&amp;budget={{ selected_budget|urlencode }}">
-                Previous
-            </a>
-        {% endif %}
-
-        <span>
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}&amp;q={{ search_query|urlencode }}&amp;category={{ selected_category|urlencode }}&amp;area={{ selected_area|urlencode }}&amp;budget={{ selected_budget|urlencode }}">
-                Next
-            </a>
-        {% endif %}
-    </nav>
+<div>
+{% if page_obj.paginator.count %}
+<p class="mute small">Showing results {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}.</p>
 {% endif %}
-
-</body>
-</html>
+<div class="res">
+{% for listing in listings %}
+<a class="card t" href="{% url 'technicians:service_detail' listing.id %}" style="text-decoration:none;color:inherit">
+<div class="av">
+{% if listing.technician.profile_picture %}<img src="{{ listing.technician.profile_picture.url }}" alt="">{% else %}<img src="{% static 'images/default-avatar.png' %}" alt="">{% endif %}
+</div>
+<div>
+<h3 style="margin:0">{{ listing.title }}</h3>
+<div class="mute small">{{ listing.technician.user.username }} · {{ listing.category.name }}{% for area in listing.service_areas.all %}{% if forloop.first %} · {% endif %}{{ area.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+<div style="margin-top:6px">
+{% with technician=listing.technician %}{% include "includes/verification_badge.html" %}{% endwith %}
+{% if listing.avg_rating %}<span class="small">Rating {{ listing.avg_rating|floatformat:1 }} out of 5 ({{ listing.review_count }})</span>{% else %}<span class="small mute">No reviews yet</span>{% endif %}
+</div>
+</div>
+<div class="price">₦{{ listing.min_price|floatformat:"0g" }}{% if listing.max_price %} – ₦{{ listing.max_price|floatformat:"0g" }}{% else %}+{% endif %}</div>
+</a>
+{% empty %}
+<div class="empty">No technicians match your search. Try removing some filters.</div>
+{% endfor %}
+</div>
+{% include "includes/pagination.html" %}
+</div>
+</div>
+{% endblock %}

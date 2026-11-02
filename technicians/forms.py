@@ -1,5 +1,5 @@
 from django import forms
-from .models import ServiceListing, ServiceCategory, ServiceArea, TechnicianProfile, TechnicianVerificationRequest
+from .models import ServiceListing, ServiceCategory, ServiceArea, TechnicianProfile, TechnicianVerificationRequest, PortfolioImage
 
 
 # Creating a service
@@ -119,3 +119,15 @@ class TechnicianVerificationAdminForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+# uploading a portfolio picture
+class PortfolioImageForm(forms.ModelForm):
+    class Meta:
+        model = PortfolioImage
+        fields = ["image", "caption"]
+
+    def clean_image(self):
+        image = self.cleaned_data["image"]
+        if image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("Image must be 5MB or smaller.")
+        return image

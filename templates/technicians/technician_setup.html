@@ -1,25 +1,13 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Become a Technician | FixNaija</title>
-</head>
-<body>
-    <h1>Become a Technician on FixNaija</h1>
-
-    <p>
-        Tell customers about your skills and the services you offer.
-        Complete the form below to create your technician profile.
-    </p>
-
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        {{ form.as_p }}
-
-        <button type="submit">Create Technician Profile</button>
-    </form>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Become a technician{% endblock %}
+{% block content %}
+<div class="card form-card wide">
+<h1 style="font-size:30px">Become a technician on FixNaija</h1>
+<p class="mute">Tell customers about your skills and the services you offer. Complete the form to create your technician profile.</p>
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+{% include "includes/form_fields.html" %}
+<button class="btn" type="submit">Create technician profile</button>
+</form>
+</div>
+{% endblock %}

@@ -1,8 +1,20 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import ServiceListingForm, TechnicianProfileForm, TechnicianVerificationRequestForm
-from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceArea, TechnicianVerificationRequest
-from django.db.models import Q, Case, When, Value, IntegerField
+from .forms import ServiceListingForm, TechnicianProfileForm, TechnicianVerificationRequestForm, PortfolioImageForm
+from .models import TechnicianProfile, ServiceListing, ServiceCategory, ServiceArea, TechnicianVerificationRequest, PortfolioImage
+
+
+def _with_ratings(listings):
+    """Add avg_rating and review_count (of the technician) to a listing queryset."""
+    from reviews.models import Review
+
+    reviews = Review.objects.filter(technician=OuterRef('technician')).values('technician')
+    return listings.annotate(
+        avg_rating=Subquery(reviews.annotate(a=Avg('rating')).values('a')),
+        review_count=Subquery(reviews.annotate(c=Count('id')).values('c')),
+    )
+from django.db.models import Q, Case, When, Value, IntegerField, Avg, Count, OuterRef, Subquery
+from django.views.decorators.http import require_POST
 from .search_utils import extract_search_terms, normalize_query, find_related_phrases
 from decimal import Decimal, InvalidOperation
 from django.core.paginator import Paginator
@@ -99,6 +111,8 @@ def my_technician_profile(request):
             'categories': categories,
             'search_query': search_query,
             'selected_category': category_id,
+            'portfolio_images': technician.portfolio_images.all(),
+            'portfolio_form': PortfolioImageForm(),
         }
     )
 
@@ -136,10 +150,15 @@ def edit_technician_profile(request):
 # Public technician profile
 def technician_public_profile(request, username):
     technician = get_object_or_404(
-        TechnicianProfile.objects.select_related('user'),
+        TechnicianProfile.objects.select_related('user').prefetch_related(
+            'verification_requests', 'portfolio_images'
+        ),
         user__username=username,
         user__is_active=True
     )
+
+    reviews = technician.reviews.select_related('reviewer')
+    rating = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
 
     listings = ServiceListing.objects.filter(
         technician=technician,
@@ -163,6 +182,9 @@ def technician_public_profile(request, username):
             'technician': technician,
             'listings': page_obj,
             'page_obj': page_obj,
+            'reviews': reviews[:10],
+            'avg_rating': rating['avg'],
+            'review_count': rating['count'],
         }
     )
 
@@ -305,7 +327,10 @@ def service_list(request):
         is_active=True,
         is_deleted=False,
         technician__user__is_active=True
-    ).select_related('technician__user', 'category')
+    ).select_related('technician__user', 'category').prefetch_related(
+        'service_areas', 'technician__verification_requests'
+    )
+    listings = _with_ratings(listings)
 
     categories = ServiceCategory.objects.filter(is_active=True)
     areas = ServiceArea.objects.filter(is_active=True)
@@ -314,6 +339,18 @@ def service_list(request):
     area_id = request.GET.get('area')
     search_query = request.GET.get('q', '').strip()
     budget = request.GET.get('budget', '').strip()
+    min_rating = request.GET.get('min_rating', '').strip()
+    verified_only = request.GET.get('verified') == '1'
+
+    # filter by verification status
+    if verified_only:
+        listings = listings.filter(technician__is_verified=True)
+
+    # filter by the technician's average rating
+    if min_rating in ('3', '4'):
+        listings = listings.filter(avg_rating__gte=int(min_rating))
+    else:
+        min_rating = ''
 
 
     if category_id:
@@ -386,9 +423,17 @@ def service_list(request):
             listings = listings.none()
 
 
+    # keep a stable order when there is no search ranking
+    if not search_query:
+        listings = listings.order_by('-technician__is_verified', 'title')
+
     # Paginate public service listings
     paginator = Paginator(listings.distinct(), 10)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # query string for pagination links (everything except page)
+    params = request.GET.copy()
+    params.pop('page', None)
 
     return render(
         request,
@@ -402,16 +447,25 @@ def service_list(request):
             'selected_area': area_id,
             'search_query': search_query,
             'selected_budget': budget,
+            'selected_min_rating': min_rating,
+            'verified_only': verified_only,
+            'querystring': params.urlencode(),
         }
     )
 
 # service detail page
 def service_detail(request, service_id):
     listing = get_object_or_404(
-        ServiceListing.objects.select_related(
-            'technician__user',
-            'category',
-        ).prefetch_related('service_areas'),
+        _with_ratings(
+            ServiceListing.objects.select_related(
+                'technician__user',
+                'category',
+            ).prefetch_related(
+                'service_areas',
+                'technician__verification_requests',
+                'technician__portfolio_images',
+            )
+        ),
         id=service_id,
         is_active=True,
         is_deleted=False,
@@ -421,7 +475,14 @@ def service_detail(request, service_id):
     return render(
         request,
         'technicians/service_detail.html',
-        {'listing': listing}
+        {
+            'listing': listing,
+            'reviews': listing.technician.reviews.select_related('reviewer')[:5],
+            'is_own_service': (
+                request.user.is_authenticated
+                and listing.technician.user_id == request.user.id
+            ),
+        }
     )
 
 # Managing user's services (by a technician)
@@ -537,3 +598,48 @@ def toggle_service_status(request, service_id):
     listing.save(update_fields=['is_active'])
 
     return redirect('technicians:my_services')
+
+
+# uploading a portfolio picture (technician only)
+@login_required
+@require_POST
+def add_portfolio_image(request):
+    technician = TechnicianProfile.objects.filter(user=request.user).first()
+
+    if not technician:
+        return redirect('technicians:technician_setup')
+
+    form = PortfolioImageForm(request.POST, request.FILES)
+
+    if form.is_valid():
+        image = form.save(commit=False)
+        image.technician = technician
+        image.save()
+        messages.success(request, 'Portfolio photo uploaded.')
+    else:
+        errors = '; '.join(
+            error for field_errors in form.errors.values() for error in field_errors
+        )
+        messages.error(request, f'Could not upload the photo: {errors}')
+
+    return redirect('technicians:my_technician_profile')
+
+
+# removing a portfolio picture (technician only)
+@login_required
+@require_POST
+def delete_portfolio_image(request, image_id):
+    technician = TechnicianProfile.objects.filter(user=request.user).first()
+
+    if not technician:
+        return redirect('technicians:technician_setup')
+
+    image = get_object_or_404(
+        PortfolioImage,
+        id=image_id,
+        technician=technician
+    )
+    image.delete()
+    messages.success(request, 'Portfolio photo removed.')
+
+    return redirect('technicians:my_technician_profile')

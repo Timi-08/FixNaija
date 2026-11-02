@@ -1,0 +1,1 @@
+{% with state=technician.verification_state %}<span class="badge {% if state == 'verified' %}b-ok{% elif state == 'pending' %}b-wait{% elif state == 'rejected' %}b-no{% else %}b-run{% endif %}">{{ technician.verification_label }}</span>{% endwith %}

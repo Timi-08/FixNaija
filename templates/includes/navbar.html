@@ -1,0 +1,27 @@
+<header class="nav"><div class="wrap">
+<a class="brand" href="{% url 'core:home' %}">Fix<b>Naija</b></a>
+<nav aria-label="Main">
+  {% with current=request.resolver_match.url_name %}
+  <a href="{% url 'technicians:service_list' %}" {% if current == 'service_list' or current == 'service_detail' or current == 'technician_public_profile' %}class="on"{% endif %}>Find technicians</a>
+  {% if user.is_authenticated %}
+    <a href="{% url 'bookings:my_bookings' %}" {% if current == 'my_bookings' %}class="on"{% endif %}>My bookings</a>
+    {% if user.technicianprofile %}
+      <a href="{% url 'bookings:incoming' %}" {% if current == 'incoming' %}class="on"{% endif %}>Job requests</a>
+      <a href="{% url 'technicians:my_technician_profile' %}" {% if current == 'my_technician_profile' or current == 'my_services' %}class="on"{% endif %}>My technician profile</a>
+    {% else %}
+      <a href="{% url 'technicians:technician_setup' %}" {% if current == 'technician_setup' %}class="on"{% endif %}>Become a technician</a>
+    {% endif %}
+  {% endif %}
+  {% endwith %}
+</nav>
+<div class="acct">
+  {% if user.is_authenticated %}
+    <a href="{% url 'accounts:profile' %}">{{ user.username }}</a>
+    {% if user.is_staff %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}
+    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="link-btn" type="submit">Log out</button></form>
+  {% else %}
+    <a href="{% url 'accounts:login' %}">Log in</a>
+    <a class="btn sm" href="{% url 'accounts:signup' %}">Register</a>
+  {% endif %}
+</div>
+</div></header>

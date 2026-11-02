@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}My bookings{% endblock %}
+{% block content %}
+<h1 style="font-size:32px">My bookings</h1>
+
+<h2>Status flow</h2>
+<div class="flow"><span>Requested</span><span>Accepted</span><span>In Progress</span><span>Completed</span></div>
+<p class="mute small">A job can end as Rejected (from Requested) or Cancelled (from Accepted or In Progress).</p>
+
+<div class="row between" style="margin-top:28px"><h2 style="margin:0">As a customer</h2>
+<form method="get" class="row"><label for="status" class="small" style="margin:0">Status</label>
+<select id="status" name="status" style="width:auto" onchange="this.form.submit()">
+<option value="">All</option>
+{% for value, label in statuses %}<option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+</select><noscript><button class="btn sm" type="submit">Filter</button></noscript></form></div>
+
+{% if page_obj.object_list %}
+<div class="scroll" style="margin-top:12px"><table>
+<tr><th>Technician</th><th>Service</th><th>Area</th><th>Requested</th><th>Status</th><th></th></tr>
+{% for booking in page_obj %}
+<tr>
+<td><a href="{% url 'technicians:technician_public_profile' booking.technician.user.username %}">{{ booking.technician.user.username }}</a></td>
+<td>{{ booking.service.title }}</td>
+<td>{{ booking.area.name }}</td>
+<td>{{ booking.request_date|date:"j M Y" }}</td>
+<td>{% include "includes/status_badge.html" %}</td>
+<td><div class="row"><a class="btn alt sm" href="{{ booking.get_absolute_url }}">View</a>
+{% if booking.status == "completed" and not booking.review %}<a class="btn sm" href="{% url 'reviews:leave' booking.id %}">Leave review</a>{% endif %}</div></td>
+</tr>
+{% endfor %}
+</table></div>
+{% include "includes/pagination.html" with querystring="status="|add:current_status %}
+{% else %}
+<div class="empty" style="margin-top:12px">No bookings yet. <a href="{% url 'technicians:service_list' %}">Find a technician</a></div>
+{% endif %}
+
+{% if user.technicianprofile %}
+<p style="margin-top:28px"><a href="{% url 'bookings:incoming' %}">See the job requests sent to you as a technician</a></p>
+{% endif %}
+{% endblock %}

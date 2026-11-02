@@ -1,58 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Technician verification{% endblock %}
+{% block content %}
+<div class="card form-card wide">
+<h1 style="font-size:30px">Technician verification</h1>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technician Verification | FixNaija</title>
-</head>
-<body>
-    <h1>Technician Verification</h1>
-
-    {% for message in messages %}
-        <p>{{ message }}</p>
-    {% endfor %}
-
-    {% if already_verified %}
-        <h2>You're already verified!</h2>
-        <p>Your technician profile has been successfully verified.</p>
-        <p>You don't need to submit another verification request.</p>
-
-    {% else %}
-        {% if pending_request %}
-            <h2>Request Under Review</h2>
-            <p>Your verification request is pending administrator review.</p>
-
-        {% else %}
-            {% if latest_request %}
-                <h2>Previous Request: {{ latest_request.get_status_display }}</h2>
-
-                {% if latest_request.status == "rejected" %}
-                    <p>
-                        <strong>Reason for rejection:</strong>
-                        {{ latest_request.review_notes|default:"No reason was recorded." }}
-                    </p>
-                    <p>You can correct the issue and submit a new request.</p>
-                {% elif latest_request.status == "approved" %}
-                    <p>Your technician profile has been verified.</p>
-                {% endif %}
-            {% endif %}
-
-            <h2>Submit a Verification Request</h2>
-            <p>Submit an identity document. A trade qualification document is optional.</p>
-
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit">Submit for Review</button>
-            </form>
-        {% endif %}
+{% if already_verified %}
+<div class="msg"><strong>You are already verified.</strong> You do not need to submit another request.</div>
+{% else %}
+  {% if pending_request %}
+  <div class="msg warn"><strong>Request under review.</strong> Your verification request is pending administrator review.</div>
+  {% else %}
+    {% if latest_request %}
+    <h2>Previous request: {{ latest_request.get_status_display }}</h2>
+      {% if latest_request.status == "rejected" %}
+      <div class="msg error"><strong>Reason for rejection:</strong> {{ latest_request.review_notes|default:"No reason was recorded." }}</div>
+      <p>You can correct the issue and submit a new request.</p>
+      {% elif latest_request.status == "approved" %}
+      <p>Your technician profile has been verified.</p>
+      {% endif %}
     {% endif %}
+    <h2>Submit a verification request</h2>
+    <p class="mute">Submit an identity document. A trade qualification document is optional.</p>
+    <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <button class="btn" type="submit">Submit for review</button>
+    </form>
+  {% endif %}
+{% endif %}
 
-    <p>
-        <a href="{% url 'technicians:my_technician_profile' %}">
-            Back to My Technician Profile
-        </a>
-    </p>
-</body>
-</html>
+<p style="margin-top:20px"><a href="{% url 'technicians:my_technician_profile' %}">Back to my technician profile</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}My reports{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="font-size:32px;margin:0">My reports</h1><a class="btn sm" href="{% url 'reviews:report' %}">New report</a></div>
+{% if reports %}
+<div class="scroll" style="margin-top:20px"><table>
+<tr><th>Subject</th><th>Booking</th><th>Status</th><th>Date</th></tr>
+{% for r in reports %}
+<tr><td>{{ r.subject }}</td>
+<td>{% if r.booking %}<a href="{{ r.booking.get_absolute_url }}">#{{ r.booking.pk }}</a>{% else %}None{% endif %}</td>
+<td><span class="badge {% if r.status == 'resolved' %}b-ok{% elif r.status == 'open' %}b-wait{% else %}b-run{% endif %}">{{ r.get_status_display }}</span></td>
+<td>{{ r.created_at|date:"j M Y" }}</td></tr>
+{% endfor %}
+</table></div>
+{% else %}<div class="empty" style="margin-top:20px">You have not reported anything.</div>{% endif %}
+{% endblock %}

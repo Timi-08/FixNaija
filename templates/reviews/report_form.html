@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Report a problem{% endblock %}
+{% block content %}
+<div class="card form-card">
+<h1 style="font-size:30px">Report a dispute or issue</h1>
+<p class="mute">The FixNaija team will review your report.</p>
+<form method="post">
+{% csrf_token %}
+{% include "includes/form_fields.html" %}
+<button class="btn" type="submit">Submit report</button>
+<a class="btn alt" href="{% url 'reviews:my_reports' %}">My reports</a>
+</form>
+</div>
+{% endblock %}
