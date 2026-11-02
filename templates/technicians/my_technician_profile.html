@@ -8,9 +8,12 @@
 <div class="t card" style="grid-template-columns:80px 1fr auto">
 <div class="av lg">{% if technician.profile_picture %}<img src="{{ technician.profile_picture.url }}" alt="">{% else %}<img src="{% static 'images/default-avatar.png' %}" alt="">{% endif %}</div>
 <div>
-<h2 style="margin-bottom:6px">{{ technician.user.username }}</h2>
+<h2 style="margin-bottom:6px">{{ technician.user.get_full_name|default:technician.user.username }}</h2>
 {% include "includes/verification_badge.html" %}
-<span class="mute small">{{ technician.base_location }}</span>
+<span class="mute small">Based in {% for area in technician.base_locations.all %}{{ area.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+<div class="small">Categories: {% for category in technician.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+<div class="small">Email: {{ technician.user.email }}</div>
+<div class="small">Phone: {{ technician.user.profile.phone }}</div>
 </div>
 <div class="row">
 <a class="btn alt sm" href="{% url 'technicians:edit_technician_profile' %}">Edit profile</a>

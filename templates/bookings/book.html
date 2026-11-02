@@ -5,7 +5,7 @@
 <div class="card form-card wide">
 <h1 style="font-size:30px">Book this technician</h1>
 <div class="card" style="margin-bottom:20px;background:var(--bg)">
-<strong>{{ service.title }}</strong> with <a href="{% url 'technicians:technician_public_profile' service.technician.user.username %}">{{ service.technician.user.username }}</a><br>
+<strong>{{ service.title }}</strong> with <a href="{% url 'technicians:technician_public_profile' service.technician.user.username %}">{{ service.technician.user.get_full_name|default:service.technician.user.username }}</a><br>
 <span class="mute small">{{ service.category.name }}</span> ·
 <strong>₦{{ service.min_price|floatformat:"0g" }}{% if service.max_price %} – ₦{{ service.max_price|floatformat:"0g" }}{% else %} and above{% endif %}</strong>
 </div>

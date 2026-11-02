@@ -8,9 +8,9 @@
 <div class="t card" style="grid-template-columns:80px 1fr">
 <div class="av lg">{% if listing.technician.profile_picture %}<img src="{{ listing.technician.profile_picture.url }}" alt="">{% else %}<img src="{% static 'images/default-avatar.png' %}" alt="">{% endif %}</div>
 <div>
-<h1 style="font-size:30px;margin-bottom:6px"><a href="{% url 'technicians:technician_public_profile' listing.technician.user.username %}" style="color:inherit;text-decoration:none">{{ listing.technician.user.username }}</a></h1>
+<h1 style="font-size:30px;margin-bottom:6px"><a href="{% url 'technicians:technician_public_profile' listing.technician.user.username %}" style="color:inherit;text-decoration:none">{{ listing.technician.user.get_full_name|default:listing.technician.user.username }}</a></h1>
 {% with technician=listing.technician %}{% include "includes/verification_badge.html" %}{% endwith %}
-<span class="mute small">{{ listing.category.name }}{% if listing.technician.base_location %} · Based in {{ listing.technician.base_location }}{% endif %}</span>
+<span class="mute small">{{ listing.category.name }}{% if listing.technician.base_locations.exists %} · Based in {% for area in listing.technician.base_locations.all %}{{ area.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</span>
 {% if listing.avg_rating %}<div class="small stars" style="margin-top:6px">Rating {{ listing.avg_rating|floatformat:1 }} out of 5 ({{ listing.review_count }} review{{ listing.review_count|pluralize }})</div>{% endif %}
 </div>
 </div>

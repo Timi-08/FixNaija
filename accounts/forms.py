@@ -23,9 +23,11 @@ class SignUpForm(UserCreationForm):
 
 
 class UserDetailsForm(forms.ModelForm):
+	username = forms.CharField(label='Username', disabled=True)
+
 	class Meta:
 		model = User
-		fields = ('first_name', 'last_name', 'email')
+		fields = ('username', 'first_name', 'last_name', 'email')
 
 	def clean_email(self):
 		email = self.cleaned_data['email'].strip().lower()
@@ -39,3 +41,8 @@ class UserProfileForm(forms.ModelForm):
 	class Meta:
 		model = UserProfile
 		fields = ('phone', 'address')
+
+	def __init__(self, *args, technician=False, **kwargs):
+		super().__init__(*args, **kwargs)
+		if technician:
+			self.fields['phone'].required = True

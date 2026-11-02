@@ -11,3 +11,17 @@
 </form>
 </div>
 {% endblock %}
+{% block scripts %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  ['id_categories', 'id_base_locations'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && window.TomSelect) {
+      new TomSelect(el, {plugins: ['remove_button'], maxOptions: 100});
+    }
+  });
+});
+</script>
+{% endblock %}

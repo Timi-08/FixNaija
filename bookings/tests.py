@@ -1,11 +1,14 @@
 from django.contrib.auth import get_user_model
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
+from django.test import RequestFactory
 
 from technicians.models import ServiceArea, ServiceCategory, ServiceListing, TechnicianProfile
 
 from .models import Booking
+from .admin import BookingAdmin
 
 User = get_user_model()
 PW = "pw12345!pw"
@@ -16,10 +19,12 @@ def make_world():
     customer = User.objects.create_user("bisi", password=PW)
     stranger = User.objects.create_user("stranger", password=PW)
     cat = ServiceCategory.objects.create(name="AC technician")
-    area = ServiceArea.objects.create(name="Ajah")
-    far = ServiceArea.objects.create(name="Ikeja")
+    area, _ = ServiceArea.objects.get_or_create(name="Ajah")
+    far = ServiceArea.objects.get(name="Ikeja")
     tech = TechnicianProfile.objects.create(
-        user=tech_user, professional_info="AC pro", base_location="Ajah")
+        user=tech_user, professional_info="AC pro")
+    tech.categories.add(cat)
+    tech.base_locations.add(area)
     service = ServiceListing.objects.create(
         technician=tech, category=cat, title="AC repair",
         description="Inspection and servicing for split units, all brands.",
@@ -147,3 +152,26 @@ class BookingViewTests(TestCase):
         self.client.login(username="bisi", password=PW)
         resp = self.client.get(reverse("bookings:incoming"))
         self.assertEqual(resp.status_code, 302)
+
+
+class BookingAdminTests(TestCase):
+    def test_service_choices_disambiguate_duplicate_titles(self):
+        _, _, _, _, service, _, _ = make_world()
+        second_service = ServiceListing.objects.create(
+            technician=service.technician,
+            category=service.category,
+            title=service.title,
+            description=service.description,
+            min_price=service.min_price,
+        )
+        field = BookingAdmin(Booking, admin.site).formfield_for_foreignkey(
+            Booking._meta.get_field("service"),
+            RequestFactory().get("/admin/"),
+        )
+
+        first_label = field.label_from_instance(service)
+        second_label = field.label_from_instance(second_service)
+
+        self.assertNotEqual(first_label, second_label)
+        self.assertIn(f"#{service.pk}", first_label)
+        self.assertIn(f"#{second_service.pk}", second_label)

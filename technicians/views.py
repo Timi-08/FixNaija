@@ -21,6 +21,7 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404
+from accounts.models import UserProfile
 
 # Create your views here.
 
@@ -36,19 +37,29 @@ def technician_setup(request):
         return redirect('technicians:my_services')
 
     if request.method == 'POST':
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
         form = TechnicianProfileForm(
             request.POST,
-            request.FILES
+            request.FILES,
+            user=request.user,
+            user_profile=user_profile,
         )
 
         if form.is_valid():
             technician = form.save(commit=False)
             technician.user = request.user
             technician.save()
+            form.save_m2m()
+            user_profile.phone = form.cleaned_data['phone']
+            user_profile.save(update_fields=['phone', 'updated_at'])
 
-            return redirect('technicians:my_services')
+            return redirect('technicians:create_service_listing')
     else:
-        form = TechnicianProfileForm()
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        form = TechnicianProfileForm(
+            user=request.user,
+            user_profile=user_profile,
+        )
 
     return render(
         request,
@@ -125,21 +136,31 @@ def edit_technician_profile(request):
     )
 
     if request.method == 'POST':
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
         form = TechnicianProfileForm(
             request.POST,
             request.FILES,
-            instance=technician
+            instance=technician,
+            user=request.user,
+            user_profile=user_profile,
         )
 
         if form.is_valid():
             form.save()
+            user_profile.phone = form.cleaned_data['phone']
+            user_profile.save(update_fields=['phone', 'updated_at'])
             messages.success(
                 request,
                 'Your technician profile was updated successfully.'
             )
             return redirect('technicians:my_technician_profile')
     else:
-        form = TechnicianProfileForm(instance=technician)
+        user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        form = TechnicianProfileForm(
+            instance=technician,
+            user=request.user,
+            user_profile=user_profile,
+        )
 
     return render(
         request,
@@ -150,8 +171,11 @@ def edit_technician_profile(request):
 # Public technician profile
 def technician_public_profile(request, username):
     technician = get_object_or_404(
-        TechnicianProfile.objects.select_related('user').prefetch_related(
-            'verification_requests', 'portfolio_images'
+        TechnicianProfile.objects.select_related(
+            'user', 'user__profile'
+        ).prefetch_related(
+            'verification_requests', 'portfolio_images', 'base_locations',
+            'categories',
         ),
         user__username=username,
         user__is_active=True
@@ -180,6 +204,7 @@ def technician_public_profile(request, username):
         'technicians/technician_public_profile.html',
         {
             'technician': technician,
+            'user_profile': getattr(technician.user, 'profile', None),
             'listings': page_obj,
             'page_obj': page_obj,
             'reviews': reviews[:10],
@@ -305,7 +330,7 @@ def create_service_listing(request):
         return redirect('technicians:technician_setup')
 
     if request.method == 'POST':
-        form = ServiceListingForm(request.POST)
+        form = ServiceListingForm(request.POST, technician=technician)
         if form.is_valid():
             listing = form.save(commit=False)
             listing.technician = technician
@@ -313,7 +338,7 @@ def create_service_listing(request):
             form.save_m2m()
             return redirect('technicians:my_services')
     else:
-        form = ServiceListingForm()
+        form = ServiceListingForm(technician=technician)
 
     return render(
         request,
@@ -387,7 +412,7 @@ def service_list(request):
                 Q(category__name__icontains=term) |
                 Q(technician__user__username__icontains=term) |
                 Q(technician__professional_info__icontains=term) |
-                Q(technician__base_location__icontains=term)
+                Q(technician__base_locations__name__icontains=term)
             )
 
         for phrase in related_phrases:
@@ -536,13 +561,15 @@ def edit_service(request, service_id):
     )
 
     if request.method == 'POST':
-        form = ServiceListingForm(request.POST, instance=listing)
+        form = ServiceListingForm(
+            request.POST, instance=listing, technician=technician
+        )
 
         if form.is_valid():
             form.save()
             return redirect('technicians:my_services')
     else:
-        form = ServiceListingForm(instance=listing)
+        form = ServiceListingForm(instance=listing, technician=technician)
 
     return render(
         request,

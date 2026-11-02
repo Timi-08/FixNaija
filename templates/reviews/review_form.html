@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card form-card">
 <h1 style="font-size:30px">Rate your technician</h1>
-<p>{{ booking.service.title }} by <strong>{{ booking.technician.user.username }}</strong></p>
+<p>{{ booking.service.title }} by <strong>{{ booking.technician.user.get_full_name|default:booking.technician.user.username }}</strong></p>
 <form method="post">
 {% csrf_token %}
 {% include "includes/form_fields.html" %}

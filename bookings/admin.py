@@ -25,3 +25,13 @@ class BookingAdmin(admin.ModelAdmin):
     date_hierarchy = "request_date"
     readonly_fields = ("request_date", "updated_at")
     list_per_page = 25
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "service" and field:
+            field.label_from_instance = lambda service: (
+                f"{service.title} - "
+                f"{service.technician.user.get_full_name() or service.technician.user.username} "
+                f"({service.category.name}, #{service.pk})"
+            )
+        return field

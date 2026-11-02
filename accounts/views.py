@@ -37,7 +37,11 @@ def profile(request):
 	user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
 	has_technician_profile = hasattr(request.user, 'technicianprofile')
 	user_form = UserDetailsForm(request.POST or None, instance=request.user)
-	profile_form = UserProfileForm(request.POST or None, instance=user_profile)
+	profile_form = UserProfileForm(
+		request.POST or None,
+		instance=user_profile,
+		technician=has_technician_profile,
+	)
 
 	if request.method == 'POST' and user_form.is_valid() and profile_form.is_valid():
 		user_form.save()
