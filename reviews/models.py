@@ -29,7 +29,8 @@ class Review(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.rating}/5 for {self.technician.user.username}"
+        user = self.technician.user
+        return f"{self.rating}/5 for {user.get_full_name() or user.username}"
 
     def clean(self):
         if not self.booking_id:

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ServiceCategory,ServiceArea, ServiceListing, TechnicianProfile, TechnicianVerificationRequest, PortfolioImage
+from .models import ServiceListing, TechnicianProfile, TechnicianVerificationRequest, PortfolioImage
 from .forms import TechnicianVerificationAdminForm
 from django.utils import timezone
 from django.urls import reverse
@@ -7,71 +7,59 @@ from django.utils.html import format_html
 
 # Register your models here.
 
-@admin.register(ServiceCategory)
-class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'is_active', 'created_at')
-    search_fields = ('name', 'slug')
-    list_filter = ('is_active',)
-    prepopulated_fields = {'slug': ('name',)}
-
-@admin.register(ServiceArea)
-class ServiceAreaAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_active')
-    search_fields = ('name',)
-    list_filter = ('is_active',)
-    
-@admin.register(ServiceListing)
-class ServiceListingAdmin(admin.ModelAdmin):
-    list_display = (
-        'title',
-        'technician',
-        'category',
-        'min_price',
-        'max_price',
-        'is_active',
-        'is_deleted',
-        'created_at',
-    )
-    search_fields = (
-        'title',
-        'description',
-        'technician__user__username',
-        'category__name',
-    )
-    list_filter = (
-        'category',
-        'is_active',
-        'is_deleted',
-        'created_at',
-    )
-    list_select_related = ('technician__user', 'category')
-    filter_horizontal = ('service_areas',)
-    readonly_fields = ('created_at',)
-    date_hierarchy = 'created_at'
-    list_per_page = 25
-    
 class PortfolioImageInline(admin.TabularInline):
     model = PortfolioImage
     extra = 0
 
 
+class ServiceListingInline(admin.TabularInline):
+    model = ServiceListing
+    fields = ('title', 'category', 'min_price', 'max_price', 'is_active')
+    readonly_fields = ('title', 'category', 'min_price', 'max_price', 'is_active')
+    extra = 0
+
+
+class VerificationRequestInline(admin.TabularInline):
+    model = TechnicianVerificationRequest
+    fields = ('status', 'submitted_at', 'reviewed_at', 'reviewed_by')
+    readonly_fields = ('status', 'submitted_at', 'reviewed_at', 'reviewed_by')
+    extra = 0
+    show_change_link = True
+
+
 @admin.register(TechnicianProfile)
 class TechnicianProfileAdmin(admin.ModelAdmin):
-    inlines = [PortfolioImageInline]
+    inlines = [ServiceListingInline, VerificationRequestInline, PortfolioImageInline]
     list_display = (
         'user',
-        'base_location',
+        'location_list',
+        'category_list',
         'is_verified',
         'created_at',
     )
     search_fields = (
         'user__username',
         'user__email',
-        'base_location',
+        'base_locations__name',
     )
     list_filter = ('is_verified', 'created_at')
     list_select_related = ('user',)
+    filter_horizontal = ('categories', 'base_locations')
     readonly_fields = ('created_at',)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related(
+            'categories',
+            'base_locations',
+        )
+
+    @admin.display(description='Base locations')
+    def location_list(self, obj):
+        return ', '.join(obj.base_locations.values_list('name', flat=True))
+
+    @admin.display(description='Categories')
+    def category_list(self, obj):
+        return ', '.join(obj.categories.values_list('name', flat=True))
 
 @admin.register(TechnicianVerificationRequest)
 class TechnicianVerificationRequestAdmin(admin.ModelAdmin):

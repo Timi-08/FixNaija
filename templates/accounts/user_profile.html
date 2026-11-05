@@ -26,6 +26,11 @@
 <p class="mute small">Are you a technician or skilled repairer? Create a technician profile to list your services, set your prices and connect with customers.</p>
 <a class="btn" href="{% url 'technicians:technician_setup' %}">Become a technician</a></div>
 {% endif %}
+<div class="card"><h3>Account</h3>
+<p class="mute small">Signed in as {{ request.user.username }}</p>
+<form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+<button class="btn bad" type="submit">Log out</button>
+</form></div>
 <div class="card"><h3>As a customer</h3>
 <div class="stack">
 <a class="btn alt" href="{% url 'bookings:my_bookings' %}">My bookings</a>

@@ -19,7 +19,7 @@
 <tr><th>Technician</th><th>Service</th><th>Area</th><th>Requested</th><th>Status</th><th></th></tr>
 {% for booking in page_obj %}
 <tr>
-<td><a href="{% url 'technicians:technician_public_profile' booking.technician.user.username %}">{{ booking.technician.user.username }}</a></td>
+<td><a href="{% url 'technicians:technician_public_profile' booking.technician.user.username %}">{{ booking.technician.user.get_full_name|default:booking.technician.user.username }}</a></td>
 <td>{{ booking.service.title }}</td>
 <td>{{ booking.area.name }}</td>
 <td>{{ booking.request_date|date:"j M Y" }}</td>

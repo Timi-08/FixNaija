@@ -9,6 +9,14 @@
 <p>You have not created a technician profile yet. Create one to start offering your services on FixNaija.</p>
 <a class="btn" href="{% url 'technicians:technician_setup' %}">Create technician profile</a></div>
 {% else %}
+{% if not listings %}
+<div class="card" style="margin-top:20px">
+<p class="badge b-wait">Step 2 of 2</p>
+<h2>Add your first service</h2>
+<p class="mute">Your technician profile is set up. Add a service listing so customers can find and book you.</p>
+<a class="btn" href="{% url 'technicians:create_service_listing' %}">Add your first service</a>
+</div>
+{% endif %}
 <div class="scroll" style="margin-top:20px">
 {% if listings %}
 <table><tr><th>Service</th><th>Category</th><th>Rate</th><th>Status</th><th>Actions</th></tr>

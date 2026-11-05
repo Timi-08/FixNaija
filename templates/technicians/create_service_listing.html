@@ -3,6 +3,8 @@
 {% block content %}
 <div class="card form-card wide">
 <h1 style="font-size:30px">Create a service listing</h1>
+<p class="badge b-wait">Step 2 of 2</p>
+<p class="mute">Your technician profile is ready. Add a service, its price and the areas where customers can book it.</p>
 <form method="post">
 {% csrf_token %}
 {% include "includes/form_fields.html" %}

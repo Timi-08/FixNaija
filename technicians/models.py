@@ -32,7 +32,14 @@ class TechnicianProfile(models.Model):
         on_delete=models.CASCADE
     )
     professional_info = models.TextField()
-    base_location = models.CharField(max_length=100)
+    categories = models.ManyToManyField(
+        ServiceCategory,
+        related_name="technicians",
+    )
+    base_locations = models.ManyToManyField(
+        "ServiceArea",
+        related_name="technicians",
+    )
     profile_picture = models.ImageField(
         upload_to="technician_profiles/",
         null=True,
@@ -42,7 +49,7 @@ class TechnicianProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user} - Technician"
+        return f"{self.user.get_full_name() or self.user.username} - Technician"
 
     @property
     def verification_state(self):

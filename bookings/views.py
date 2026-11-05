@@ -34,7 +34,8 @@ def book_service(request, service_id):
         booking = form.save()
         messages.success(
             request,
-            f"Your request has been sent to {service.technician.user.username}. "
+            f"Your request has been sent to "
+            f"{service.technician.user.get_full_name() or service.technician.user.username}. "
             "You will see the status change here.",
         )
         return redirect(booking)

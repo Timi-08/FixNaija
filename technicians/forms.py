@@ -16,16 +16,28 @@ class ServiceListingForm(forms.ModelForm):
         ]
 
 # filter out inactive fields i.e categories and areas
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, technician=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fields['category'].queryset = ServiceCategory.objects.filter(
             is_active=True
         )
+        if technician and technician.categories.filter(is_active=True).exists():
+            self.fields['category'].queryset = technician.categories.filter(
+                is_active=True
+            )
+            if self.instance.pk:
+                self.fields['category'].queryset = (
+                    self.fields['category'].queryset
+                    | ServiceCategory.objects.filter(
+                        pk=self.instance.category_id,
+                        is_active=True,
+                    )
+                )
 
         self.fields['service_areas'].queryset = ServiceArea.objects.filter(
             is_active=True
-    )
+        )
 
 # Creating a technician profile
 class TechnicianProfileForm(forms.ModelForm):
@@ -40,43 +52,71 @@ class TechnicianProfileForm(forms.ModelForm):
         required=False,
         disabled=True,
     )
+    phone = forms.CharField(label="Phone number", max_length=20)
 
     class Meta:
         model = TechnicianProfile
         fields = [
+            'categories',
+            'base_locations',
             'professional_info',
-            'base_location',
             'profile_picture',
         ]
 
         widgets = {
+            'categories': forms.SelectMultiple(attrs={
+                'size': 6,
+            }),
+            'base_locations': forms.SelectMultiple(attrs={
+                'size': 8,
+            }),
             'professional_info': forms.Textarea(attrs={
                 'rows': 5,
                 'placeholder': 'Describe your skills and experience',
             }),
-            'base_location': forms.TextInput(attrs={
-                'placeholder': 'Enter your service location',
-            }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, user_profile=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.instance and self.instance.pk:
-            self.fields['username'].initial = (
-                self.instance.user.username
-            )
-            self.fields['email'].initial = (
-                self.instance.user.email
-            )
+        self.user = user or getattr(self.instance, 'user', None)
+        if self.user:
+            self.fields['username'].initial = self.user.username
+            self.fields['email'].initial = self.user.email
+        if user_profile:
+            self.fields['phone'].initial = user_profile.phone
+
+        self.fields['categories'].queryset = ServiceCategory.objects.filter(
+            is_active=True
+        )
+        self.fields['base_locations'].queryset = ServiceArea.objects.filter(
+            is_active=True
+        )
+        self.fields['categories'].required = True
+        self.fields['base_locations'].required = True
+        self.fields['phone'].required = True
 
         self.order_fields([
                 'username',
                 'email',
+                'phone',
+                'categories',
+                'base_locations',
                 'professional_info',
-                'base_location',
                 'profile_picture',
             ])
+
+    def clean_phone(self):
+        phone = self.cleaned_data['phone'].strip()
+        if not phone:
+            raise forms.ValidationError("Phone number is required.")
+        return phone
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not self.user:
+            raise forms.ValidationError("A user account is required.")
+        return cleaned_data
 
 # technician verificaton form
 class TechnicianVerificationRequestForm(forms.ModelForm):

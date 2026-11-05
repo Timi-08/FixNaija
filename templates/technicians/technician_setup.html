@@ -3,11 +3,26 @@
 {% block content %}
 <div class="card form-card wide">
 <h1 style="font-size:30px">Become a technician on FixNaija</h1>
-<p class="mute">Tell customers about your skills and the services you offer. Complete the form to create your technician profile.</p>
+<p class="badge b-wait">Step 1 of 2</p>
+<p class="mute">First, create your technician profile. On the next step, you will add the services customers can book.</p>
 <form method="post" enctype="multipart/form-data">
 {% csrf_token %}
 {% include "includes/form_fields.html" %}
-<button class="btn" type="submit">Create technician profile</button>
+<button class="btn" type="submit">Continue to step 2: add services</button>
 </form>
 </div>
+{% endblock %}
+{% block scripts %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  ['id_categories', 'id_base_locations'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && window.TomSelect) {
+      new TomSelect(el, {plugins: ['remove_button'], maxOptions: 100});
+    }
+  });
+});
+</script>
 {% endblock %}

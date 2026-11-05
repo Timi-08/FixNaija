@@ -46,7 +46,7 @@
 </div>
 <div>
 <h3 style="margin:0">{{ listing.title }}</h3>
-<div class="mute small">{{ listing.technician.user.username }} · {{ listing.category.name }}{% for area in listing.service_areas.all %}{% if forloop.first %} · {% endif %}{{ area.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+<div class="mute small">{{ listing.technician.user.get_full_name|default:listing.technician.user.username }} · {{ listing.category.name }}{% for area in listing.service_areas.all %}{% if forloop.first %} · {% endif %}{{ area.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
 <div style="margin-top:6px">
 {% with technician=listing.technician %}{% include "includes/verification_badge.html" %}{% endwith %}
 {% if listing.avg_rating %}<span class="small">Rating {{ listing.avg_rating|floatformat:1 }} out of 5 ({{ listing.review_count }})</span>{% else %}<span class="small mute">No reviews yet</span>{% endif %}

@@ -77,6 +77,19 @@ class AccountFlowTests(TestCase):
 		self.assertEqual(user.profile.phone, '+2348000000000')
 		self.assertEqual(user.profile.address, 'Lagos')
 
+	def test_profile_shows_username(self):
+		user = User.objects.create_user(
+			username='ada',
+			email='ada@example.com',
+			password='Strong-pass-583!',
+		)
+		UserProfile.objects.create(user=user)
+		self.client.force_login(user)
+
+		response = self.client.get(reverse('accounts:profile'))
+
+		self.assertContains(response, 'value="ada"')
+
 	def test_login_and_logout(self):
 		User.objects.create_user(
 			username='ada',

@@ -1,15 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}{{ technician.user.username }}{% endblock %}
+{% block title %}{{ technician.user.get_full_name|default:technician.user.username }}{% endblock %}
 {% block content %}
 <p class="small"><a href="{% url 'technicians:service_list' %}">Back to results</a></p>
 
 <div class="t card" style="grid-template-columns:80px 1fr">
 <div class="av lg">{% if technician.profile_picture %}<img src="{{ technician.profile_picture.url }}" alt="">{% else %}<img src="{% static 'images/default-avatar.png' %}" alt="">{% endif %}</div>
 <div>
-<h1 style="font-size:30px;margin-bottom:6px">{{ technician.user.username }}</h1>
+<h1 style="font-size:30px;margin-bottom:6px">{{ technician.user.get_full_name|default:technician.user.username }}</h1>
 {% include "includes/verification_badge.html" %}
-{% if technician.base_location %}<span class="mute small">Based in {{ technician.base_location }}</span>{% endif %}
+<div class="mute small">Based in {% for area in technician.base_locations.all %}{{ area.name }}{% if not forloop.last %}, {% endif %}{% empty %}Location not listed{% endfor %}</div>
+{% if technician.categories.exists %}<div class="small">Categories: {% for category in technician.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+<div class="small">Email: <a href="mailto:{{ technician.user.email }}">{{ technician.user.email }}</a></div>
+{% if user_profile.phone %}<div class="small">Phone: <a href="tel:{{ user_profile.phone }}">{{ user_profile.phone }}</a></div>{% endif %}
 {% if review_count %}<div class="small stars" style="margin-top:6px">Rating {{ avg_rating|floatformat:1 }} out of 5 ({{ review_count }} review{{ review_count|pluralize }})</div>{% endif %}
 </div>
 </div>

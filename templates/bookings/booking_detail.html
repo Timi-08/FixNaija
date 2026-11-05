@@ -19,7 +19,7 @@
 <dt>Service</dt><dd><a href="{% url 'technicians:service_detail' booking.service.id %}">{{ booking.service.title }}</a>
 <span class="mute small">(₦{{ booking.service.min_price|floatformat:"0g" }}{% if booking.service.max_price %} – ₦{{ booking.service.max_price|floatformat:"0g" }}{% else %}+{% endif %})</span></dd>
 <dt>Customer</dt><dd>{{ booking.customer.username }}</dd>
-<dt>Technician</dt><dd><a href="{% url 'technicians:technician_public_profile' booking.technician.user.username %}">{{ booking.technician.user.username }}</a></dd>
+<dt>Technician</dt><dd><a href="{% url 'technicians:technician_public_profile' booking.technician.user.username %}">{{ booking.technician.user.get_full_name|default:booking.technician.user.username }}</a></dd>
 <dt>Area</dt><dd>{{ booking.area.name }}</dd>
 <dt>Address</dt><dd>{{ booking.address }}</dd>
 <dt>Preferred date</dt><dd>{% if booking.preferred_date %}{{ booking.preferred_date|date:"j M Y" }}{% else %}Not specified{% endif %}</dd>
